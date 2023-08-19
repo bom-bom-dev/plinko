@@ -1,34 +1,19 @@
 import * as PIXI from "pixi.js";
-
-const weights = [
-    [0.5, 0.5],
-    [0.25, 0.5, 0.25],
-    [0.125, 0.375, 0.375, 0.125],
-    [0.0625, 0.25, 0.375, 0.25, 0.0625],
-    [0.03125, 0.15625, 0.3125, 0.3125, 0.15625, 0.03125],
-    [0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625],
-    [0.0078125, 0.0546875, 0.1640625, 0.2734375, 0.2734375, 0.1640625, 0.0546875, 0.0078125],
-    [0.00390625, 0.03125, 0.109375, 0.21875, 0.2734375, 0.21875, 0.109375, 0.03125, 0.00390625],
-    [0.001953125, 0.017578125, 0.0703125, 0.1640625, 0.24609375, 0.24609375, 0.1640625, 0.0703125, 0.017578125, 0.001953125],
-    [0.0009765625, 0.009765625, 0.046875, 0.1171875, 0.205078125, 0.24609375, 0.205078125, 0.1171875, 0.046875, 0.009765625, 0.0009765625],
-    [0.00048828125, 0.005859375, 0.03125, 0.09375, 0.17578125, 0.234375, 0.234375, 0.17578125, 0.09375, 0.03125, 0.005859375, 0.00048828125]
-]
-
-const BALL_COLOR = "gold";
-const PEG_COLOR = "white";
-const BACKGROUND_COLOR = "darkslateblue";
-
-const PEG_RADIUS = 5;
-const PEG_GAP_X = 50;
-const PEG_GAP_Y = 70;
-const PADDING = 100;
-const BALL_RADIUS = 10;
-const BASKET_HEIGHT = 50;
+import {
+    BACKGROUND_COLOR,
+    BALL_COLOR,
+    BALL_RADIUS,
+    BASKET_HEIGHT, PADDING,
+    PEG_COLOR,
+    PEG_GAP_X, PEG_GAP_Y,
+    PEG_RADIUS,
+    weights
+} from "./config";
 
 const app = new PIXI.Application({
     background: BACKGROUND_COLOR,
-    height: window.innerHeight - 3,
-    width: window.innerWidth - 3,
+    height: window.innerHeight,
+    width: window.innerWidth,
 });
 document.body.appendChild(app.view);
 
@@ -115,7 +100,6 @@ class Pegs {
         return peg;
     }
     createPegs() {
-
         for (let row = 0; row < weights.length; row++) {
             const colsInThisRow = weights[row].length + 1;
             const totalWidth = (colsInThisRow - 1) * PEG_GAP_X;
@@ -152,7 +136,7 @@ class Basket {
     createBasket(peg, index) {
         const basket = new PIXI.Graphics();
         basket.beginFill(index % 2 === 0 ? "green" : "yellowgreen");
-        basket.drawRect(peg.x - PEG_GAP_X, app.renderer.height - BASKET_HEIGHT, PEG_GAP_X, BASKET_HEIGHT);
+        basket.drawRect(peg.x - PEG_GAP_X, peg.y + 20, PEG_GAP_X, BASKET_HEIGHT);
         basket.endFill();
         return basket;
     }
