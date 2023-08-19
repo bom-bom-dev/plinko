@@ -25,9 +25,7 @@
     "webpack-dev-server": "^4.15.0"
   },
   "dependencies": {
-    "gsap": "^3.12.2",
     "matter-js": "^0.19.0",
-    "pixi-tween": "^0.2.0",
     "pixi.js": "^7.2.4"
   }
 }
