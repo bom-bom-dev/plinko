@@ -7,4 +7,32 @@
 
 html {
   overflow: hidden;
+  font-family: Arial, "sans-serif";
 }
+
+#statistic {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  padding: 16px;
+  z-index: 2;
+  background: #f1f1f1;
+
+  b {
+    display: inline-block;
+    width: 24px;
+  }
+  span{
+    margin-left: 4px;
+  }
+}
+
+#configs {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  padding: 16px;
+  z-index: 2;
+  background: #f1f1f1;
+}
+

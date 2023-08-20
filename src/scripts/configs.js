@@ -1,4 +1,4 @@
-export const weights = [
+export const WEIGHTS = [
     [0.5, 0.5],
     [0.25, 0.5, 0.25],
     [0.125, 0.375, 0.375, 0.125],
@@ -9,16 +9,17 @@ export const weights = [
     [0.00390625, 0.03125, 0.109375, 0.21875, 0.2734375, 0.21875, 0.109375, 0.03125, 0.00390625],
     [0.001953125, 0.017578125, 0.0703125, 0.1640625, 0.24609375, 0.24609375, 0.1640625, 0.0703125, 0.017578125, 0.001953125],
     [0.0009765625, 0.009765625, 0.046875, 0.1171875, 0.205078125, 0.24609375, 0.205078125, 0.1171875, 0.046875, 0.009765625, 0.0009765625],
-    [0.00048828125, 0.005859375, 0.03125, 0.09375, 0.17578125, 0.234375, 0.234375, 0.17578125, 0.09375, 0.03125, 0.005859375, 0.00048828125]
-]
+    [0.00048828125, 0.005859375, 0.03125, 0.09375, 0.17578125, 0.234375, 0.234375, 0.17578125, 0.09375, 0.03125, 0.005859375, 0.00048828125],
+];
 
-export const BALL_COLOR = "gold";
-export const PEG_COLOR = "white";
-export const BACKGROUND_COLOR = "darkslateblue";
-
-export const PEG_RADIUS = 5;
-export const PEG_GAP_X = 50;
-export const PEG_GAP_Y = 70;
-export const PADDING = 100;
-export const BALL_RADIUS = 10;
-export const BASKET_HEIGHT = 50;
+export const CONFIGS = {
+    BALL_COLOR: "gold",
+    PEG_COLOR: "white",
+    BACKGROUND_COLOR: "darkslateblue",
+    BALL_RADIUS: 10,
+    PEG_RADIUS: 5,
+    PEG_GAP_X: 50,
+    PEG_GAP_Y: 60,
+    PADDING_TOP: 100,
+    CELL_HEIGHT: 50,
+}

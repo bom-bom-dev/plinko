@@ -1,15 +1,21 @@
 import * as PIXI from "pixi.js";
-import {
-    BACKGROUND_COLOR,
-    BALL_COLOR,
-    BALL_RADIUS,
-    BASKET_HEIGHT, PADDING,
-    PEG_COLOR,
-    PEG_GAP_X, PEG_GAP_Y,
-    PEG_RADIUS,
-    weights
-} from "./config";
+import { gsap } from "gsap";
+import { binaryPass } from "./algoritms";
+import { CONFIGS, WEIGHTS } from "./configs";
 
+const {
+    BALL_RADIUS,
+    BALL_COLOR,
+    BACKGROUND_COLOR,
+    PEG_COLOR,
+    PEG_GAP_X,
+    PEG_GAP_Y,
+    PEG_RADIUS,
+    CELL_HEIGHT,
+    PADDING_TOP} = CONFIGS;
+
+
+// Create PIXI app
 const app = new PIXI.Application({
     background: BACKGROUND_COLOR,
     height: window.innerHeight,
@@ -18,77 +24,187 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 
 
-class Ball {
-    ball = null;
-    constructor(pegs, basket) {
-        this.pegs = pegs;
-        this.basket = basket;
+class Animations {
+    // type EaseString = "none"
+    //     | "power1" | "power1.in" | "power1.out" | "power1.inOut"
+    //     | "power2" | "power2.in" | "power2.out" | "power2.inOut"
+    //     | "power3" | "power3.in" | "power3.out" | "power3.inOut"
+    //     | "power4" | "power4.in" | "power4.out" | "power4.inOut"
+    //     | "back" | "back.in" | "back.out" | "back.inOut"
+    //     | "bounce" | "bounce.in" | "bounce.out" | "bounce.inOut"
+    //     | "circ" | "circ.in" | "circ.out" | "circ.inOut"
+    //     | "elastic" | "elastic.in" | "elastic.out" | "elastic.inOut"
+    //     | "expo" | "expo.in" | "expo.out" | "expo.inOut"
+    //     | "sine" | "sine.in" | "sine.out" | "sine.inOut" | string;
 
-        this.ball = new PIXI.Graphics();
-        this.ball.beginFill(BALL_COLOR);
-        this.ball.drawCircle(0, 0, BALL_RADIUS);
-        this.ball.endFill();
-        this.ball.x = app.renderer.width / 2;
-        this.ball.y = 0;
-        this.draw();
+    static ease = "back.out";
+    static duration = 0.3;
+    static dy = PEG_GAP_Y / 15;
+    static dx = PEG_GAP_X / 2;
+
+    static ballMoveRight(ball) {
+        gsap.to(ball, {
+            y: ball.y - this.dy,
+            ease: this.ease,
+            duration: 0,
+        });
+        gsap.to(ball, {
+            x: ball.x + this.dx,
+            ease: this.ease,
+            duration: this.duration,
+        });
+    }
+    static ballMoveLeft(ball) {
+        gsap.to(ball, {
+            y: ball.y - this.dy,
+            duration: 0,
+        });
+        gsap.to(ball, {
+            x: ball.x - this.dx,
+            ease: this.ease,
+            duration: this.duration,
+        });
+    }
+    static ballGravity(ball) {
+        gsap.to(ball, {
+            y: ball.y + 3,
+            duration: 0,
+        });
     }
 
-    checkPegCollision(peg) {
+    static pegScale(peg) {
+        if (!peg.scale._active) {
+            peg.scale._active = true;
+
+            gsap.to(peg.scale, {
+                x: 1.5,
+                y: 1.5,
+                duration: 0.1,
+                yoyo: true,
+                repeat: 1,
+                onComplete: () => { peg.scale._active = false; }
+            });
+        }
+    }
+}
+
+class BallCollisions {
+    lineIndex = 0;
+    constructor(ball) {
+        this.ball = ball;
+    }
+
+    isPegCollision(peg) {
         const dx = this.ball.x - peg.x;
-        const dy = this.ball.y - peg.y;
+        const dy = this.ball.y - peg.parent.getBounds().top;
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance <= (BALL_RADIUS + PEG_RADIUS);
     }
-    checkBasketCollision(cell) {
-        const topOfBasket = app.renderer.height - BASKET_HEIGHT;
-        if (this.ball.y + BALL_RADIUS >= topOfBasket) {
-            const leftBound = cell.getBounds().left;
-            const rightBound = cell.getBounds().right;
-            return this.ball.x >= leftBound && this.ball.x <= rightBound;
-        }
-        return false;
+    isCellCollision(cell) {
+        if (this.ball.y < cell.getBounds().top - BALL_RADIUS) return false;
+
+        const leftBound = cell.getBounds().left;
+        const rightBound = cell.getBounds().right;
+        return this.ball.x >= leftBound && this.ball.x <= rightBound;
+    }
+    isLineCollision(line) {
+        const topOfGate = line.getBounds().top;
+        return this.ball.y >= topOfGate;
+    }
+}
+
+class Ball extends BallCollisions {
+    ball = null;
+    constructor(cells, lines, result) {
+        super();
+        this.cells = cells;
+        this.lines = lines;
+        this.result = result;
+        this.lifeCycle();
     }
 
     lifeCycle() {
         const death = () => {
             app.stage.removeChild(this.ball);
             app.ticker.remove(life);
-            console.log('Ball died');
+            // console.log('Ball died');
         }
         const  life = () => {
-            this.ball.y += 3; // Gravity
-            this.pegs.forEach(peg => {
-                if (this.checkPegCollision(peg)) {
-                    console.log('Peg collision')
-                    this.ball.x += PEG_GAP_X / 2;
+            const curLine = this.lines[this.lineIndex]; // Get nearest line
+
+            // Check for nearest line collision
+            if (this.isLineCollision(curLine)) {
+                const pegs = curLine.children; // Get all pegs in the line
+
+                // Check collision for each peg in the line
+                pegs.forEach((peg) => {
+                    if (this.isPegCollision(peg)) {
+                        Animations.pegScale(peg);
+
+                        // Check for result for the current line, generated by binaryPass(), look at plinkoInit()
+                        switch (this.result[this.lineIndex]) {
+                            case "left":
+                                Animations.ballMoveLeft(this.ball);
+                                break;
+                            case "right":
+                                Animations.ballMoveRight(this.ball);
+                                break;
+                        }
+                    }
+                });
+
+                // If ball is in the last gate, check for cell collision
+                if (this.lineIndex === this.lines.length - 1) {
+                    this.cells.forEach((cell, i) => {
+                        if (this.isCellCollision(cell)) {
+
+                            // TODO: make statistics function
+                            const node = document.getElementById(`cell-${i}`);
+                            node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
+
+                            death(); // Remove the ball
+                        }
+                    });
                 }
-            });
-            this.basket.forEach((cell, i) => {
-                if (this.checkBasketCollision(cell)) {
-                    console.log('Basket collision with cell:', i);
-                    death();
+
+                // Increment line collision index because the ball has passed through the line
+                if (this.lineIndex < this.lines.length - 1) {
+                    this.lineIndex++;
                 }
-            });
+            }
+            
+            Animations.ballGravity(this.ball); // Move the ball down
         }
         const birth = () => {
-            app.stage.addChild(this.ball);
-            app.ticker.add(life);
-            console.log('Ball born');
+            // Create ball
+            this.ball = new PIXI.Graphics();
+            this.ball.beginFill(BALL_COLOR);
+            this.ball.drawCircle(0, 0, BALL_RADIUS);
+            this.ball.endFill();
+            this.ball.x = app.renderer.width / 2;
+            this.ball.y = 0;
+
+            app.stage.addChild(this.ball); // Add ball to the stage
+            app.ticker.add(life); // Start the ball life cycle
+            // console.log('Ball born');
         }
-
         birth();
-    }
-
-    draw() {
-        this.lifeCycle();
     }
 }
 
-class Pegs {
-    pegs = [];
+class PegsLines {
+    lines = [];
     constructor() {
-        this.pegs = this.createPegs();
-        this.draw();
+        this.createPegsLines();
+    }
+    line(x, y) {
+        const line = new PIXI.Graphics();
+        line.beginFill('rgba(0, 0, 0, 0.1)');
+        line.drawRect(0, 0, app.renderer.width, PEG_RADIUS * 2);
+        line.endFill();
+        line.x = x;
+        line.y = y;
+        return line;
     }
     peg(x, y) {
         const peg = new PIXI.Graphics();
@@ -99,67 +215,79 @@ class Pegs {
         peg.y = y;
         return peg;
     }
-    createPegs() {
-        for (let row = 0; row < weights.length; row++) {
-            const colsInThisRow = weights[row].length + 1;
-            const totalWidth = (colsInThisRow - 1) * PEG_GAP_X;
+    createPegsLines() {
+        for (let row = 0; row < WEIGHTS.length; row++) {
+            const pegsInThisRow = WEIGHTS[row].length + 1;
+            const totalWidth = (pegsInThisRow - 1) * PEG_GAP_X;
             const offsetX = (app.renderer.width - totalWidth) / 2;
+            const y = PADDING_TOP + PEG_GAP_Y * row;
+            const line = this.line(0, y);
 
-            for (let col = 0; col < colsInThisRow; col++) {
+            for (let col = 0; col < pegsInThisRow; col++) {
                 const x = col * PEG_GAP_X + offsetX;
-                const y = row * PEG_GAP_Y + PADDING;
-
-                const peg = this.peg(x, y);
-                this.pegs.push(peg);
+                const peg = this.peg(x, PEG_RADIUS);
+                line.addChild(peg);
             }
-        }
 
-        return this.pegs;
+            this.lines.push(line);
+            app.stage.addChild(line);
+        }
     }
-    getPegs() {
-        return this.pegs;
-    }
-    draw() {
-        this.pegs.forEach(peg => {
-            app.stage.addChild(peg);
-        });
+    getLines() {
+        return this.lines;
     }
 }
 
-class Basket {
+class Cells {
     cells = [];
-    constructor(pegs) {
-        const lastRowPegs = pegs.slice(weights.pop().length * -1);
-        this.cells = lastRowPegs.map((peg, index) => this.createBasket(peg, index));
-        this.draw();
+    constructor(lines) {
+        this.createCells(lines);
     }
-    createBasket(peg, index) {
-        const basket = new PIXI.Graphics();
-        basket.beginFill(index % 2 === 0 ? "green" : "yellowgreen");
-        basket.drawRect(peg.x - PEG_GAP_X, peg.y + 20, PEG_GAP_X, BASKET_HEIGHT);
-        basket.endFill();
-        return basket;
+
+    cell(x, y, color) {
+        const cell = new PIXI.Graphics();
+        cell.beginFill(color);
+        cell.drawRect(0, 0, PEG_GAP_X, CELL_HEIGHT);
+        cell.endFill();
+        cell.x = x;
+        cell.y = y;
+        return cell;
     }
-    getBasket() {
+
+    createCells(lines) {
+        const lastLine =  lines[lines.length - 1]
+        const lastRowPegs = lastLine.children.slice(WEIGHTS[WEIGHTS.length - 1].length * -1);
+
+        lastRowPegs.forEach((peg, index) => {
+            const x = peg.x - PEG_GAP_X;
+            const y = lastLine.y + PEG_GAP_Y / 2;
+            const cell = this.cell(x, y, index % 2 === 0 ? 'green' : 'yellowgreen');
+
+            app.stage.addChild(cell);
+            this.cells.push(cell);
+        });
+    }
+    getCells() {
         return this.cells;
     }
-    draw() {
-        this.cells.forEach(basket => {
-            app.stage.addChild(basket);
-        });
-    }
 }
 
-function plinko() {
-    const pegsInstance = new Pegs();
-    const pegs = pegsInstance.getPegs();
+export function plinkoInit() {
+    const linesInstance = new PegsLines();
+    const lines = linesInstance.getLines();
 
-    const basketInstance = new Basket(pegs);
-    const basket = basketInstance.getBasket();
+    const cellsInstance = new Cells(lines);
+    const cells = cellsInstance.getCells();
 
     document.querySelector("canvas").onclick = () => {
-        new Ball(pegs, basket);
+        const result = binaryPass();
+        new Ball(cells, lines, result);
+
+        // for (let i = 0; i < 100; i++) {
+        //     setTimeout(() => {
+        //         const result = binaryPass();
+        //         new Ball(cells, lines, result);
+        //     }, 100 * i);
+        // }
     };
 }
-
-plinko();

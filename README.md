@@ -3,6 +3,8 @@
 ### Stack
 - JS
 - PixiJS
+- GSAP
+- MersenneTwister
 - Webpack
 
 ### Run
