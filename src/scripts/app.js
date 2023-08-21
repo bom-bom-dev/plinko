@@ -283,14 +283,17 @@ export function plinkoInit() {
     const cells = cellsInstance.getCells();
 
     document.querySelector("canvas").onclick = () => {
+        if (sessionStorage.getItem("multi-ball") === "true") {
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const result = binaryPass();
+                    new Ball(cells, lines, result);
+                }, 100 * i);
+            }
+            return;
+        }
+
         const directions = binaryPass();
         new Ball(cells, lines, directions);
-
-        // for (let i = 0; i < 100; i++) {
-        //     setTimeout(() => {
-        //         const result = binaryPass();
-        //         new Ball(cells, lines, result);
-        //     }, 100 * i);
-        // }
     };
 }

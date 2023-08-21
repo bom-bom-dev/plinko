@@ -1,4 +1,4 @@
-name: Build to gh-pages branch
+name: build to gh-pages branch
 
 on:
   workflow_dispatch:

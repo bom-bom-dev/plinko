@@ -27,12 +27,16 @@ html {
   }
 }
 
-#configs {
+label {
   position: absolute;
   right: 16px;
   top: 16px;
   padding: 16px;
   z-index: 2;
   background: #f1f1f1;
+
+  input {
+    margin-left: 8px;
+  }
 }
 
