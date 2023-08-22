@@ -18,11 +18,20 @@ export const CONFIGS = {
     BALL_COLOR: "gold",
     PEG_COLOR: "white",
     BACKGROUND_COLOR: "darkslateblue",
-    BALL_RADIUS: 10,
+
+    BALL_RADIUS: 9,
     PEG_RADIUS: 5,
+
     PEG_GAP_X: 50,
-    PEG_GAP_Y: 60,
-    PADDING_TOP: 100,
+    PEG_GAP_Y: 50,
+
+    PADDING_TOP: 80,
     CELL_HEIGHT: 50,
     BALL_SPEED: 4,
+
+    GAME_BOARD_WIDTH: 800,
+    GAME_BOARD_HEIGHT: 600,
+
+    GLOBAL_OFFSET_X: 0,
+    GLOBAL_OFFSET_Y: 0,
 }
