@@ -1,7 +1,8 @@
 import * as PIXI from "pixi.js";
 import { gsap } from "gsap";
 import { binaryPass } from "./algoritms";
-import { CONFIGS, WEIGHTS } from "./configs";
+import { CONFIGS, MULTIPLIERS, WEIGHTS } from "./configs";
+import { generateGradient } from "./main";
 
 const {
     BALL_RADIUS,
@@ -88,6 +89,22 @@ class Animations {
             });
         }
     }
+
+    static cellCollision(cell) {
+        if (!cell.position._active) {
+            cell.position._active = true;
+            cell.tint -= 10000;
+
+            gsap.to(cell.position, {
+                y: cell.y + 3,
+                duration: 0.1,
+                yoyo: true,
+                repeat: 1,
+                onComplete: () => { cell.position._active = false; cell.tint += 10000; }
+            });
+        }
+
+    }
 }
 
 class BallCollisions {
@@ -164,6 +181,7 @@ class Ball extends BallCollisions {
                             const node = document.getElementById(`cell-${i}`);
                             node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
 
+                            Animations.cellCollision(cell); // Animate cell collision
                             death(); // Remove the ball
                         }
                     });
@@ -243,17 +261,31 @@ class PegsLines {
 
 class Cells {
     cells = [];
+    palette = generateGradient(WEIGHTS[WEIGHTS.length - 1].length);
     constructor(lines) {
         this.createCells(lines);
     }
 
-    cell(x, y, color) {
+    cell(x, y, index) {
         const cell = new PIXI.Graphics();
-        cell.beginFill(color);
+        cell.beginFill(this.palette[index]);
         cell.drawRect(0, 0, PEG_GAP_X, CELL_HEIGHT);
         cell.endFill();
         cell.x = x;
         cell.y = y;
+
+        const text = new PIXI.Text(MULTIPLIERS[index], {
+            fontSize: 17,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: 'bold',
+            fill: '#333',
+        });
+        text.anchor.set(0.5);
+        text.x = PEG_GAP_X / 2;
+        text.y = CELL_HEIGHT / 2;
+
+        cell.addChild(text);
         return cell;
     }
 
@@ -263,7 +295,7 @@ class Cells {
         for (let i = 0; i < lastLine.children.length - 1; i++) {
             const x = lastLine.children[i].x;
             const y = lastLine.y + PEG_GAP_Y / 2;
-            const cell = this.cell(x, y, i % 2 === 0 ? 'green' : 'yellowgreen');
+            const cell = this.cell(x, y, i);
 
             app.stage.addChild(cell);
             this.cells.push(cell);

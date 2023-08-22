@@ -4,6 +4,7 @@
 - JS
 - PixiJS
 - GSAP
+- Chroma-js
 - MersenneTwister
 - Webpack
 

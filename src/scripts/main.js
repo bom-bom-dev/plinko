@@ -1,7 +1,7 @@
 import "/src/styles/styles.scss";
 import { WEIGHTS } from "./configs";
 import { plinkoInit } from "./app";
-
+import chroma from "chroma-js";
 
 // MULTI BALLS HANDLER
 const checkboxNode = document.createElement("label");
@@ -26,6 +26,20 @@ WEIGHTS[WEIGHTS.length - 1].forEach((weight, index) => {
 
     statisticNode.appendChild(cell);
 });
+
+
+// PALETTE FOR CELLS
+export function generateGradient(length) {
+    const scale = chroma.scale(['#009d1b', '#6dea00','#fffb00', '#ee8f00']);
+    const colors = [];
+    for (let i = 0; i < length / 2; i++) {
+        colors.push(scale(i / (length / 2)).hex());
+    }
+    return length % 2 === 0
+        ? colors.concat(colors.slice().reverse())
+        : colors.concat(colors.slice(0, -1).reverse());
+}
+
 
 
 // INIT
