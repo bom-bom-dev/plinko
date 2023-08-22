@@ -109,6 +109,32 @@ class Animations {
         }
 
     }
+
+    static buttonClick(button) {
+        if (!button.scale._active) {
+            button.scale._active = true;
+
+            button.pivot.x = button.width / 2;
+            button.pivot.y = button.height / 2;
+            button.x += button.width / 2;
+            button.y += button.height / 2;
+
+            gsap.to(button.scale, {
+                x: 0.9,
+                y: 0.9,
+                duration: 0.05,
+                yoyo: true,
+                repeat: 1,
+                onComplete: () => {
+                    button.scale._active = false;
+                    button.pivot.x = 0;
+                    button.pivot.y = 0;
+                    button.x -= button.width / 2;
+                    button.y -= button.height / 2;
+                }
+            });
+        }
+    }
 }
 
 class BallCollisions {
@@ -316,6 +342,10 @@ class GameBoard {
     gameBoard;
 
     constructor(lines, cells) {
+        this.createGameBoard(lines, cells);
+    }
+
+    createGameBoard(lines, cells) {
         this.gameBoard = new PIXI.Container();
         this.gameBoard.width = GAME_BOARD_WIDTH;
         this.gameBoard.height = GAME_BOARD_HEIGHT;
@@ -325,6 +355,59 @@ class GameBoard {
         lines.forEach(line => this.gameBoard.addChild(line));
         cells.forEach(cell => this.gameBoard.addChild(cell));
         app.stage.addChild(this.gameBoard);
+    }
+
+    getBoard() {
+        return this.gameBoard;
+    }
+}
+
+class HandlerBar {
+    constructor(lines, cells) {
+        this.createHandlerBar();
+        this.lines = lines;
+        this.cells = cells;
+    }
+
+    button(x, y, text) {
+        const button = new PIXI.Graphics();
+        button.beginFill(BALL_COLOR);
+        button.drawRect(0, 0, 150, 50);
+        button.endFill();
+
+        const buttonText = new PIXI.Text(text, {
+            fontSize: 17,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: 'bold',
+            fill: '#333',
+        });
+        buttonText.anchor.set(0.5);
+        buttonText.x = button.width / 2;
+        buttonText.y = button.height / 2;
+
+        button.addChild(buttonText);
+        return button;
+    }
+    createHandlerBar() {
+        const handlerBar = new PIXI.Container();
+        handlerBar.width = GAME_BOARD_WIDTH;
+        handlerBar.height = GAME_BOARD_HEIGHT / 4;
+        handlerBar.x = GLOBAL_OFFSET_X;
+        handlerBar.y = GAME_BOARD_HEIGHT + PADDING_TOP * 1.5;
+
+        const runButton = this.button(0, 0, "GO");
+        runButton.x = GAME_BOARD_WIDTH / 2 - runButton.width / 2;
+        runButton.eventMode = "dynamic";
+
+        runButton.on("pointerdown", () => {
+            Animations.buttonClick(runButton);
+            const directions = binaryPass();
+            new Ball(this.cells, this.lines, directions);
+        });
+
+        handlerBar.addChild(runButton);
+        app.stage.addChild(handlerBar);
     }
 }
 
@@ -336,19 +419,20 @@ export function plinkoInit() {
     const cells = cellsInstance.getCells();
 
     new GameBoard(lines, cells);
+    new HandlerBar(lines, cells);
 
-    document.querySelector("canvas").onclick = () => {
-        if (sessionStorage.getItem("multi-ball") === "true") {
-            for (let i = 0; i < 100; i++) {
-                setTimeout(() => {
-                    const result = binaryPass();
-                    new Ball(cells, lines, result);
-                }, 100 * i);
-            }
-            return;
-        }
-
-        const directions = binaryPass();
-        new Ball(cells, lines, directions);
-    };
+    // document.querySelector("canvas").onclick = () => {
+    //     if (sessionStorage.getItem("multi-ball") === "true") {
+    //         for (let i = 0; i < 100; i++) {
+    //             setTimeout(() => {
+    //                 const result = binaryPass();
+    //                 new Ball(cells, lines, result);
+    //             }, 100 * i);
+    //         }
+    //         return;
+    //     }
+    //
+    //     const directions = binaryPass();
+    //     new Ball(cells, lines, directions);
+    // };
 }
