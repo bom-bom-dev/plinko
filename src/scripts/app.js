@@ -15,6 +15,10 @@ const {
     CELL_HEIGHT,
     PADDING_TOP,
     BALL_SPEED,
+    GAME_BOARD_WIDTH,
+    GAME_BOARD_HEIGHT,
+    GLOBAL_OFFSET_X,
+    GLOBAL_OFFSET_Y,
 } = CONFIGS;
 
 
@@ -112,10 +116,12 @@ class BallCollisions {
     constructor(ball) {
         this.ball = ball;
     }
-
     isPegCollision(peg) {
-        const dx = this.ball.x - peg.x;
-        const dy = this.ball.y - peg.parent.getBounds().top;
+        const ballGlobal = this.ball.toGlobal(new PIXI.Point());
+        const pegGlobal = peg.toGlobal(new PIXI.Point());
+
+        const dx = ballGlobal.x - pegGlobal.x;
+        const dy = ballGlobal.y - pegGlobal.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance <= (BALL_RADIUS + PEG_RADIUS);
     }
@@ -202,7 +208,7 @@ class Ball extends BallCollisions {
             this.ball.beginFill(BALL_COLOR);
             this.ball.drawCircle(0, 0, BALL_RADIUS);
             this.ball.endFill();
-            this.ball.x = app.renderer.width / 2;
+            this.ball.x = GAME_BOARD_WIDTH / 2 + GLOBAL_OFFSET_X;
             this.ball.y = 0;
 
             app.stage.addChild(this.ball); // Add ball to the stage
@@ -221,7 +227,7 @@ class PegsLines {
     line(x, y) {
         const line = new PIXI.Graphics();
         line.beginFill('rgba(0, 0, 0, 0.1)');
-        line.drawRect(0, 0, app.renderer.width, PEG_RADIUS * 2);
+        line.drawRect(0, 0, GAME_BOARD_WIDTH, PEG_RADIUS * 2);
         line.endFill();
         line.x = x;
         line.y = y;
@@ -240,7 +246,7 @@ class PegsLines {
         for (let row = 0; row < WEIGHTS.length; row++) {
             const pegsInThisRow = WEIGHTS[row].length + 1;
             const totalWidth = (pegsInThisRow - 1) * PEG_GAP_X;
-            const offsetX = (app.renderer.width - totalWidth) / 2;
+            const offsetX = (GAME_BOARD_WIDTH - totalWidth) / 2;
             const y = PADDING_TOP + PEG_GAP_Y * row;
             const line = this.line(0, y);
 
@@ -294,7 +300,7 @@ class Cells {
 
         for (let i = 0; i < lastLine.children.length - 1; i++) {
             const x = lastLine.children[i].x;
-            const y = lastLine.y + PEG_GAP_Y / 2;
+            const y = lastLine.y + PEG_GAP_Y;
             const cell = this.cell(x, y, i);
 
             app.stage.addChild(cell);
@@ -306,12 +312,30 @@ class Cells {
     }
 }
 
+class GameBoard {
+    gameBoard;
+
+    constructor(lines, cells) {
+        this.gameBoard = new PIXI.Container();
+        this.gameBoard.width = GAME_BOARD_WIDTH;
+        this.gameBoard.height = GAME_BOARD_HEIGHT;
+        this.gameBoard.x = GLOBAL_OFFSET_X;
+        this.gameBoard.y = GLOBAL_OFFSET_Y;
+
+        lines.forEach(line => this.gameBoard.addChild(line));
+        cells.forEach(cell => this.gameBoard.addChild(cell));
+        app.stage.addChild(this.gameBoard);
+    }
+}
+
 export function plinkoInit() {
     const linesInstance = new PegsLines();
     const lines = linesInstance.getLines();
 
     const cellsInstance = new Cells(lines);
     const cells = cellsInstance.getCells();
+
+    new GameBoard(lines, cells);
 
     document.querySelector("canvas").onclick = () => {
         if (sessionStorage.getItem("multi-ball") === "true") {
