@@ -252,7 +252,7 @@ class PegsLines {
     }
     line(x, y) {
         const line = new PIXI.Graphics();
-        line.beginFill('rgba(0, 0, 0, 0.1)');
+        // line.beginFill('rgba(0, 0, 0, 0.1)');
         line.drawRect(0, 0, GAME_BOARD_WIDTH, PEG_RADIUS * 2);
         line.endFill();
         line.x = x;
@@ -402,6 +402,17 @@ class HandlerBar {
 
         runButton.on("pointerdown", () => {
             Animations.buttonClick(runButton);
+
+            if (sessionStorage.getItem("multi-ball") === "true") {
+                for (let i = 0; i < 100; i++) {
+                    setTimeout(() => {
+                        const directions = binaryPass();
+                        new Ball(this.cells, this.lines, directions);
+                    }, 100 * i);
+                }
+                return;
+            }
+
             const directions = binaryPass();
             new Ball(this.cells, this.lines, directions);
         });
@@ -425,8 +436,8 @@ export function plinkoInit() {
     //     if (sessionStorage.getItem("multi-ball") === "true") {
     //         for (let i = 0; i < 100; i++) {
     //             setTimeout(() => {
-    //                 const result = binaryPass();
-    //                 new Ball(cells, lines, result);
+    //                 const directions = binaryPass();
+    //                 new Ball(cells, lines, directions);
     //             }, 100 * i);
     //         }
     //         return;

@@ -32,6 +32,6 @@ export const CONFIGS = {
     GAME_BOARD_WIDTH: 800,
     GAME_BOARD_HEIGHT: 600,
 
-    GLOBAL_OFFSET_X: 0,
+    GLOBAL_OFFSET_X: window.innerWidth / 2 - 400,
     GLOBAL_OFFSET_Y: 0,
 }
