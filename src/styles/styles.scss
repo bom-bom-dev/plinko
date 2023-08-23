@@ -3,11 +3,12 @@
   padding: 0;
   position: relative;
   box-sizing: border-box;
+  user-select: none;
 }
 
 html {
   overflow: hidden;
-  font-family: 'Tektur', cursive;
+  font-family: 'Tektur', 'Arial', sans-serif;
 }
 
 #statistic {

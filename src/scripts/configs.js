@@ -25,7 +25,7 @@ export const CONFIGS = {
     PEG_GAP_X: 50,
     PEG_GAP_Y: 50,
 
-    PADDING_TOP: 80,
+    PADDING_TOP: 50,
     CELL_HEIGHT: 50,
     BALL_SPEED: 4,
 

@@ -19,7 +19,7 @@ const generator = new MersenneTwister();
 
 function weightedRandom(a, b) {
     const sum = a + b ;
-    const rand = (generator.random() * sum);
+    const rand = (generator.random_excl() * sum);
     return rand < sum / 2;
 }
 
@@ -30,22 +30,29 @@ export function binaryPass() {
 
     for (let i = 0; i < WEIGHTS.length; i++) {
         const row = WEIGHTS[i];
-        const leftIndex =  cur === 0 ? cur : cur - 1;
+        const leftIndex = cur;
         const rightIndex = cur === row.length - 1 ? cur : cur + 1;
 
-        const leftWeight = row[leftIndex];
-        const rightWeight = row[rightIndex];
+        const leftWeight = leftIndex !== cur ? row[leftIndex] : 0;
+        const rightWeight = rightIndex !== cur ? row[rightIndex] : 0;
 
         // return true or false, which is left or right
         const randomValue = weightedRandom(leftWeight, rightWeight);
         result.push(randomValue ? "left" : "right");
 
-        if (randomValue) {
-            cur !== 0 && cur--;
-        } else {
-            cur !== row.length - 1 && cur++;
+        cur = randomValue ? leftIndex : rightIndex;
+
+        if (i === WEIGHTS.length - 1) {
+            console.log("-", cur, "-");
+            console.log("")
+
+            // TODO integrate registrationResult() here
         }
     }
 
     return result;
+}
+
+export function registrationResult() {
+
 }
