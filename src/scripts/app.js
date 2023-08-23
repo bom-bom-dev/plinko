@@ -6,6 +6,8 @@ import { CONFIGS, MULTIPLIERS, WEIGHTS } from "./configs";
 import { generateGradient } from "./main";
 import coin from "../sounds/sound3.mp3";
 import run from "../sounds/sound1.mp3";
+import change from "../sounds/sound4.mp3";
+import minMax from "../sounds/sound5.mp3";
 
 const {
     BALL_RADIUS,
@@ -28,8 +30,8 @@ const {
 // Create PIXI app
 const app = new PIXI.Application({
     background: BACKGROUND_COLOR,
-    height: window.innerHeight,
-    width: window.innerWidth,
+    height: window.outerHeight,
+    width: window.outerWidth,
 });
 document.body.appendChild(app.view);
 
@@ -50,6 +52,8 @@ class Sounds {
     createSounds() {
         this._sound("coin", coin);
         this._sound("run", run);
+        this._sound("change", change);
+        this._sound("min-max", minMax);
     }
 
     static playSound(name) {
@@ -146,8 +150,6 @@ class Animations {
             button.pivot.y = button.height / 2;
             button.x += button.width / 2;
             button.y += button.height / 2;
-
-            Sounds.playSound("run");
 
             gsap.to(button.scale, {
                 x: 0.9,
@@ -399,10 +401,10 @@ class HandlerBar {
         this.cells = cells;
     }
 
-    button(x, y, text) {
+    button(text, color, w = 100, h = 50) {
         const button = new PIXI.Graphics();
-        button.beginFill(BALL_COLOR);
-        button.drawRect(0, 0, 150, 50);
+        button.beginFill(color);
+        button.drawRect(0, 0, w, h);
         button.endFill();
 
         const buttonText = new PIXI.Text(text, {
@@ -424,14 +426,23 @@ class HandlerBar {
         handlerBar.width = GAME_BOARD_WIDTH;
         handlerBar.height = GAME_BOARD_HEIGHT / 4;
         handlerBar.x = GLOBAL_OFFSET_X;
-        handlerBar.y = GAME_BOARD_HEIGHT + PADDING_TOP * 1.5;
+        handlerBar.y = GAME_BOARD_HEIGHT + PADDING_TOP + PEG_GAP_Y;
 
-        const runButton = this.button(0, 0, "GO");
+
+        const background = new PIXI.Graphics();
+        background.beginFill("rgba(0, 0, 0, 0.1)");
+        background.drawRect(0, 0, GAME_BOARD_WIDTH, GAME_BOARD_HEIGHT / 4);
+        background.endFill();
+        handlerBar.addChild(background);
+
+
+        const runButton = this.button("GO!", BALL_COLOR, 320, 80);
         runButton.x = GAME_BOARD_WIDTH / 2 - runButton.width / 2;
+        runButton.y = 0;
         runButton.eventMode = "dynamic";
-
         runButton.on("pointerdown", () => {
             Animations.buttonClick(runButton);
+            Sounds.playSound("run");
 
             if (sessionStorage.getItem("multi-ball") === "true") {
                 for (let i = 0; i < 100; i++) {
@@ -447,12 +458,150 @@ class HandlerBar {
             new Ball(this.cells, this.lines, directions);
         });
 
+
+        const betContainer = new PIXI.Container();
+        betContainer.width = 200;
+        betContainer.height = 50;
+        betContainer.x = GAME_BOARD_WIDTH / 2 - 100;
+        betContainer.y = runButton.height + 20;
+
+        const background2 = new PIXI.Graphics();
+        background2.beginFill("rgba(0, 0, 0, 0.1)");
+        background2.drawRect(0, 0, 200, 50);
+        background2.endFill();
+        betContainer.addChild(background2);
+
+        const betText = new PIXI.Text("1 COIN", {
+            fontSize: 17,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: '',
+            fill: '#fff',
+        });
+        betText.anchor.set(0.5);
+        betText.x = betContainer.width / 2;
+        betText.y = betContainer.height / 2;
+
+        const betControls = (direction) => {
+            const value = betText.text.split(" ")[0];
+
+            if (value === "50" && direction === "up" || value === "1" && direction === "down") {
+                return;
+            }
+            switch (direction) {
+                case "up":
+                    betText.text = +value + 1 + " COIN";
+                    break;
+                case "down":
+                    betText.text = +value - 1 + " COIN";
+                    break;
+                case "max":
+                    betText.text = "50 COIN";
+                    break;
+                case "min":
+                    betText.text = "1 COIN";
+                    break;
+            }
+        }
+
+        const upButton = this.button("+", "greenyellow", 50, 50);
+        upButton.x = 200 - upButton.width;
+        upButton.eventMode = "dynamic";
+        upButton.on("pointerdown", () => {
+            Animations.buttonClick(upButton);
+            Sounds.playSound("change");
+            betControls("up");
+        });
+
+        const upMaxButton = this.button("max", "yellowgreen", 50, 50);
+        upMaxButton.x = upButton.x + upButton.width + 10;
+        upMaxButton.eventMode = "dynamic";
+        upMaxButton.on("pointerdown", () => {
+            Animations.buttonClick(upMaxButton);
+            Sounds.playSound("min-max");
+            betControls("max");
+        });
+
+        const downButton = this.button("-", "orange", 50, 50);
+        downButton.x = 0;
+        downButton.eventMode = "dynamic";
+        downButton.on("pointerdown", () => {
+            Animations.buttonClick(downButton);
+            Sounds.playSound("change");
+            betControls("down");
+        });
+
+        const upMinButton = this.button("min", "darkorange", 50, 50);
+        upMinButton.x = downButton.x - upMinButton.width - 10;
+        upMinButton.eventMode = "dynamic";
+        upMinButton.on("pointerdown", () => {
+            Animations.buttonClick(upMinButton);
+            Sounds.playSound("min-max");
+            betControls("min");
+        });
+
+        betContainer.addChild(upButton);
+        betContainer.addChild(upMaxButton);
+        betContainer.addChild(downButton);
+        betContainer.addChild(upMinButton);
+        betContainer.addChild(betText);
+
+
+        const totalContainer = new PIXI.Container();
+        totalContainer.width = 150;
+        totalContainer.height = 150;
+
+        const totalBetTitle = new PIXI.Text("TOTAL BET:", {
+            fontSize: 32,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: '',
+            fill: '#fff',
+        });
+        const totalBetValue = new PIXI.Text("1000", {
+            fontSize: 50,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: '',
+            fill: '#fff',
+        });
+        totalBetValue.y = totalBetTitle.height;
+
+        totalContainer.addChild(totalBetTitle);
+        totalContainer.addChild(totalBetValue);
+
+
+        const resultsContainer  = new PIXI.Container();
+        resultsContainer.width = 150;
+        resultsContainer.height = 150;
+        resultsContainer.x = GAME_BOARD_WIDTH - 150;
+
+        const resultsTitle = new PIXI.Text("RESULTS:", {
+            fontSize: 32,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: '',
+            fill: '#fff',
+        });
+        resultsContainer.addChild(resultsTitle);
+
+        const resultsTable = new PIXI.Container();
+        resultsTable.width = 150;
+        resultsTable.height = 150;
+        resultsTable.y = resultsTitle.height;
+        resultsContainer.addChild(resultsTable);
+
         handlerBar.addChild(runButton);
+        handlerBar.addChild(betContainer);
+        handlerBar.addChild(totalContainer);
+        handlerBar.addChild(resultsContainer);
         app.stage.addChild(handlerBar);
     }
 }
 
 export function plinkoInit() {
+    new Sounds();
+
     const linesInstance = new PegsLines();
     const lines = linesInstance.getLines();
 
@@ -461,21 +610,4 @@ export function plinkoInit() {
 
     new GameBoard(lines, cells);
     new HandlerBar(lines, cells);
-
-    new Sounds();
-
-    // document.querySelector("canvas").onclick = () => {
-    //     if (sessionStorage.getItem("multi-ball") === "true") {
-    //         for (let i = 0; i < 100; i++) {
-    //             setTimeout(() => {
-    //                 const directions = binaryPass();
-    //                 new Ball(cells, lines, directions);
-    //             }, 100 * i);
-    //         }
-    //         return;
-    //     }
-    //
-    //     const directions = binaryPass();
-    //     new Ball(cells, lines, directions);
-    // };
 }
