@@ -1,8 +1,11 @@
 import * as PIXI from "pixi.js";
+import { sound } from '@pixi/sound';
 import { gsap } from "gsap";
 import { binaryPass } from "./algoritms";
 import { CONFIGS, MULTIPLIERS, WEIGHTS } from "./configs";
 import { generateGradient } from "./main";
+import coin from "../sounds/sound3.mp3";
+import run from "../sounds/sound1.mp3";
 
 const {
     BALL_RADIUS,
@@ -30,6 +33,29 @@ const app = new PIXI.Application({
 });
 document.body.appendChild(app.view);
 
+
+class Sounds {
+    constructor() {
+        this.createSounds();
+    }
+
+    _sound(name, file) {
+        sound.add(name, {
+            url: file,
+            volume: 0.1,
+            preload: true,
+        });
+    };
+
+    createSounds() {
+        this._sound("coin", coin);
+        this._sound("run", run);
+    }
+
+    static playSound(name) {
+        sound.play(name);
+    }
+}
 
 class Animations {
     // type EaseString = "none"
@@ -99,6 +125,8 @@ class Animations {
             cell.position._active = true;
             cell.tint -= 10000;
 
+            Sounds.playSound("coin");
+
             gsap.to(cell.position, {
                 y: cell.y + 3,
                 duration: 0.1,
@@ -118,6 +146,8 @@ class Animations {
             button.pivot.y = button.height / 2;
             button.x += button.width / 2;
             button.y += button.height / 2;
+
+            Sounds.playSound("run");
 
             gsap.to(button.scale, {
                 x: 0.9,
@@ -431,6 +461,8 @@ export function plinkoInit() {
 
     new GameBoard(lines, cells);
     new HandlerBar(lines, cells);
+
+    new Sounds();
 
     // document.querySelector("canvas").onclick = () => {
     //     if (sessionStorage.getItem("multi-ball") === "true") {
