@@ -34,4 +34,6 @@ export const CONFIGS = {
 
     GLOBAL_OFFSET_X: window.innerWidth / 2 - 400,
     GLOBAL_OFFSET_Y: 0,
+
+    MULTI_BALLS: 100,
 }

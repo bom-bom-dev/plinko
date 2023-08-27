@@ -41,9 +41,10 @@ export function generateGradient(length) {
 }
 
 
-
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
     checkbox.checked = sessionStorage.getItem("multi-ball") === "true";
-    plinkoInit();
+    setTimeout(() => {
+        plinkoInit();
+    }, 100);
 });
