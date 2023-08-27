@@ -38,12 +38,57 @@ document.body.appendChild(app.view);
 
 
 class Sounds {
+    isMute = sessionStorage.getItem("mute");
+
     constructor() {
+        this.isMute ? sound.muteAll() : sound.unmuteAll();
+
         this.createSounds();
-        Sounds.muteAll();
+        this.muteButton();
     }
 
-    _sound(name, file) {
+    muteButton() {
+        const muteButton = new PIXI.Graphics();
+        muteButton.beginFill(BALL_COLOR);
+        muteButton.drawRect(0, 0, 80, 40);
+        muteButton.endFill();
+        muteButton.x = GLOBAL_OFFSET_X + GAME_BOARD_WIDTH - muteButton.width;
+        muteButton.y = 16;
+        muteButton.tint = this.isMute === "true" ? 0xffffff : 0x00ff00;
+        muteButton.eventMode = "dynamic";
+        muteButton.on("pointerdown", () => {
+            Animations.buttonClick(muteButton);
+            this.isMute = sessionStorage.getItem("mute");
+
+            if (this.isMute === "true") {
+                sessionStorage.setItem("mute", false);
+                sound.unmuteAll();
+                muteButton.tint = 0x00ff00;
+                muteButton.children[0].text = "SOUND ON";
+            } else {
+                sessionStorage.setItem("mute", true);
+                sound.muteAll();
+                muteButton.tint = 0xffffff;
+                muteButton.children[0].text = "SOUND OFF";
+            }
+        });
+
+        app.stage.addChild(muteButton);
+
+        const muteText = new PIXI.Text(this.isMute === "true" ? "SOUND OFF" : "SOUND ON", {
+            fontSize: 12,
+            align: 'center',
+            fontFamily: 'Tektur',
+            fontWeight: 'bold',
+            fill: '#333',
+        });
+        muteText.anchor.set(0.5);
+        muteText.x = muteButton.width / 2;
+        muteText.y = muteButton.height / 2;
+        muteButton.addChild(muteText);
+    }
+
+    s(name, file) {
         sound.add(name, {
             url: file,
             volume: 0.1,
@@ -52,14 +97,10 @@ class Sounds {
     };
 
     createSounds() {
-        this._sound("coin", coin);
-        this._sound("run", run);
-        this._sound("change", change);
-        this._sound("min-max", minMax);
-    }
-
-    static muteAll() {
-        sound.muteAll();
+        this.s("coin", coin);
+        this.s("run", run);
+        this.s("change", change);
+        this.s("min-max", minMax);
     }
 
     static playSound(name) {
@@ -466,9 +507,10 @@ class HandlerBar {
     }
 
     runButton(w = 320, h = 80) {
-        const runButton = this.button("GO!", BALL_COLOR, w, h);
+        const runButton = this.button("PLAY", BALL_COLOR, w, h);
         runButton.x = GAME_BOARD_WIDTH / 2 - runButton.width / 2;
         runButton.y = 0;
+        runButton.children[0].style.fontSize = 37;
         runButton.eventMode = "dynamic";
         runButton.on("pointerdown", () => {
             Animations.buttonClick(runButton);
@@ -570,7 +612,6 @@ class HandlerBar {
             fontSize: 17,
             align: 'center',
             fontFamily: 'Tektur',
-            fontWeight: '',
             fill: '#fff',
         });
         betValue.anchor.set(0.5);
@@ -622,7 +663,6 @@ class HandlerBar {
             fontSize: 30,
             align: 'right',
             fontFamily: 'Tektur',
-            fontWeight: '',
             fill: '#fff',
         });
         resultsTitle.x = w - resultsTitle.width;
@@ -632,7 +672,6 @@ class HandlerBar {
             fontSize: 50,
             align: 'right',
             fontFamily: 'Tektur',
-            fontWeight: '',
             fill: '#fff',
         });
         resultValue.y = resultsTitle.height;
