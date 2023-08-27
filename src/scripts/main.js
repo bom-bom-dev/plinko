@@ -1,5 +1,5 @@
 import "/src/styles/styles.scss";
-import { CONFIGS } from "./configs";
+import { CONFIGS, WEIGHTS } from "./configs";
 import { plinkoInit } from "./app";
 import chroma from "chroma-js";
 
@@ -31,7 +31,7 @@ export function createStatisticTable() {
     statisticNode.id = "statistic";
     document.body.appendChild(statisticNode);
 
-    [...Array(+sessionStorage.getItem("lines")).fill(null)].forEach((n, index) => {
+    WEIGHTS[+sessionStorage.getItem("lines") - 1].forEach((w, index) => {
         const cell = document.createElement("p");
         cell.innerHTML = `<b>${index}</b>: <span id="cell-${index}">0</span>`;
         statisticNode.appendChild(cell);
