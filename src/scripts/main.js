@@ -1,5 +1,5 @@
 import "/src/styles/styles.scss";
-import { WEIGHTS } from "./configs";
+import { CONFIGS } from "./configs";
 import { plinkoInit } from "./app";
 import chroma from "chroma-js";
 
@@ -23,12 +23,15 @@ export function createStatisticTable() {
     if (document.getElementById("statistic")) {
         document.getElementById("statistic").remove();
     }
+    if (!sessionStorage.getItem("lines")) {
+        sessionStorage.setItem("lines", CONFIGS.MAX_LINES);
+    }
 
     const statisticNode = document.createElement("div");
     statisticNode.id = "statistic";
     document.body.appendChild(statisticNode);
 
-    [...Array(+sessionStorage.getItem("lines"))].forEach((n, index) => {
+    [...Array(+sessionStorage.getItem("lines")).fill(null)].forEach((n, index) => {
         const cell = document.createElement("p");
         cell.innerHTML = `<b>${index}</b>: <span id="cell-${index}">0</span>`;
         statisticNode.appendChild(cell);
@@ -50,9 +53,7 @@ export function generateGradient(length) {
 
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => {
-        plinkoInit();
-        createMultiBallsHandler();
-        createStatisticTable();
-    }, 100);
+    plinkoInit();
+    createMultiBallsHandler();
+    createStatisticTable();
 });

@@ -406,15 +406,6 @@ class PegsLines {
     getLines() {
         return this.lines;
     }
-
-    recreateLines() {
-        this.lines.forEach((line) => {
-            app.stage.removeChild(line);
-            line.destroy({ children: true });
-        });
-        this.lines = [];
-        this.createPegsLines();
-    }
 }
 
 class Cells {
@@ -792,7 +783,6 @@ class HandlerBar {
 
 class GameBoard {
     gameBoard = null;
-    handlerBar = null;
 
     constructor() {
         this.createGameBoard();
@@ -803,7 +793,7 @@ class GameBoard {
         this.gameBoard.width = GAME_BOARD_WIDTH;
         this.gameBoard.height = GAME_BOARD_HEIGHT;
         this.gameBoard.x = GLOBAL_OFFSET_X;
-        this.gameBoard.y = GLOBAL_OFFSET_Y;
+        this.gameBoard.y =  GLOBAL_OFFSET_Y;
         app.stage.addChild(this.gameBoard);
 
         const linesInstance = new PegsLines();
@@ -827,14 +817,9 @@ class GameBoard {
         this.gameBoard = null;
         this.createGameBoard();
     }
-
-    getBoard() {
-        return this.gameBoard;
-    }
 }
 
 export function plinkoInit() {
     new Sounds();
     new GameBoard();
-    sessionStorage.setItem("balls-counter", 0);
 }
