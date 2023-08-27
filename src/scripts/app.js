@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import { sound } from '@pixi/sound';
 import { gsap } from "gsap";
-import { binaryPass, regResult, RESULTS } from "./algoritms";
+import { binaryPass, playBet, regResult, RESULTS, setBet } from "./algoritms";
 import { CONFIGS, MULTIPLIERS, WEIGHTS } from "./configs";
 import { generateGradient } from "./main";
 import coin from "../sounds/sound3.mp3";
@@ -295,7 +295,7 @@ class Ball extends BallCollisions {
                             const node = document.getElementById(`cell-${i}`);
                             node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
 
-                            regResult(i);
+                            regResult(i); // Register result
 
                             const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
                             totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
@@ -332,6 +332,10 @@ class Ball extends BallCollisions {
             Animations.ballMoveBottom(this.ball); // Move the ball down
         }
         const birth = () => {
+            if (RESULTS.getResults().total < RESULTS.getResults().bet) {
+                console.warn('You have no money for this bet!');
+                return;
+            }
             // Create ball
             // TODO make a Creator class 
             this.ball = new PIXI.Graphics();
@@ -340,6 +344,10 @@ class Ball extends BallCollisions {
             this.ball.endFill();
             this.ball.x = GAME_BOARD_WIDTH / 2 + GLOBAL_OFFSET_X;
             this.ball.y = 0;
+
+            playBet(); // Play bet
+            const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
+            totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
 
             app.stage.addChild(this.ball); // Add ball to the stage
             app.ticker.add(life); // Start the ball life cycle
@@ -521,8 +529,13 @@ class HandlerBar {
                     setTimeout(() => {
                         const directions = binaryPass();
                         new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode);
-                    }, 100 * i);
+                    }, 50 * i);
                 }
+                return;
+            }
+
+            if (RESULTS.getResults().total < RESULTS.getResults().bet) {
+                alert('You have no money for this bet!');
                 return;
             }
 
@@ -554,15 +567,19 @@ class HandlerBar {
             switch (direction) {
                 case "up":
                     betValue.text = +value + 1 + " COIN";
+                    setBet(+value + 1);
                     break;
                 case "down":
                     betValue.text = +value - 1 + " COIN";
+                    setBet(+value - 1);
                     break;
                 case "max":
                     betValue.text = "50 COIN";
+                    setBet(50);
                     break;
                 case "min":
                     betValue.text = "1 COIN";
+                    setBet(1);
                     break;
             }
         }

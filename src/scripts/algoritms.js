@@ -65,8 +65,7 @@ export function binaryPass() {
         cur = randomValue ? leftIndex : rightIndex;
 
         if (i === WEIGHTS.length - 1) {
-            console.log("-", cur, "-");
-            console.log("");
+            console.log("Generated index: ", cur);
 
             // const curResult = RESULTS.getResults();
             // const multiplier = MULTIPLIERS[cur] * 10;
@@ -106,29 +105,49 @@ function round(value, decimals) {
     return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
 }
 
-export function regResult (index) {
-    console.log("regResult", index)
+export function setBet (bet) {
     const curResult = RESULTS.getResults();
-    console.log("curResult", curResult)
+    RESULTS.setResults({
+        ...curResult,
+        bet: bet
+    });
+}
+
+export function playBet() {
+    const curBet = RESULTS.getResults().bet;
+    const curTotal = RESULTS.getResults().total;
+
+    RESULTS.setResults({
+        ...RESULTS.getResults(),
+        total: curTotal - curBet
+    });
+}
+
+export function regResult (index) {
+    console.log("Collision index:", index);
+    console.log("-----------------------");
+    const curResult = RESULTS.getResults();
+    console.log("Pre result: ", curResult);
 
     const multiplier = MULTIPLIERS[index];
     const profit = round((multiplier * curResult.bet), 2);
-    const total = round((curResult.total - curResult.bet + profit), 2);
+    const total = round((curResult.total + profit), 2);
     const last5 = curResult.last5;
+    const bet = curResult.bet;
 
     last5.length === 5 && last5.shift();
     last5.push(profit);
 
     RESULTS.setResults({
         total: total,
-        bet: 1,
+        bet: bet,
         index: index,
         multiplier: multiplier,
         profit: profit,
         last5: last5
     });
 
-    console.log("updatedResult", RESULTS.getResults());
+    console.log("Updated result: ", RESULTS.getResults());
     console.log("");
 }
 
