@@ -260,7 +260,7 @@ class Ball extends BallCollisions {
                             totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
 
                             const resultValueNode = this.resultNode.children[this.resultNode.children.length - 1];
-                            resultValueNode.text = RESULTS.getResults().last5[0]; // Increment results table
+                            resultValueNode.text = RESULTS.getResults().profit; // Increment results table
                             resultValueNode.x = this.resultNode.children[0].width - resultValueNode.width; // rewrite position
 
                             Animations.cellCollision(cell); // Animate cell collision
@@ -587,20 +587,18 @@ class HandlerBar {
         totalContainer.width = w;
         totalContainer.height = h;
 
-        totalContainer.addChild(this.background(w, h));
+        // totalContainer.addChild(this.background(w, h));
 
         const totalBetTitle = new PIXI.Text("TOTAL COINS:", {
             fontSize: 30,
             align: 'center',
             fontFamily: 'Tektur',
-            fontWeight: '',
             fill: '#fff',
         });
         const totalBetValue = new PIXI.Text(RESULTS.getResults().total, {
             fontSize: 50,
             align: 'center',
             fontFamily: 'Tektur',
-            fontWeight: '',
             fill: '#fff',
         });
         totalBetValue.y = totalBetTitle.height;
@@ -618,7 +616,7 @@ class HandlerBar {
         resultsContainer.height = h;
         resultsContainer.x = GAME_BOARD_WIDTH - w;
 
-        resultsContainer.addChild(this.background(w, h));
+        // resultsContainer.addChild(this.background(w, h));
 
         const resultsTitle = new PIXI.Text("LAST RESULT:", {
             fontSize: 30,
@@ -630,7 +628,7 @@ class HandlerBar {
         resultsTitle.x = w - resultsTitle.width;
         resultsContainer.addChild(resultsTitle);
 
-        const resultValue = new PIXI.Text(RESULTS.getResults().last5[0], {
+        const resultValue = new PIXI.Text("0", {
             fontSize: 50,
             align: 'right',
             fontFamily: 'Tektur',
