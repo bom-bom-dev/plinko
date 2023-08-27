@@ -1,9 +1,9 @@
 import * as PIXI from "pixi.js";
-import { sound } from '@pixi/sound';
+import { sound } from "@pixi/sound";
 import { gsap } from "gsap";
-import { binaryPass, regResult, RESULTS } from "./algoritms";
+import { binaryPass, playBet, regResult, RESULTS, setBet } from "./algoritms";
 import { CONFIGS, MULTIPLIERS, WEIGHTS } from "./configs";
-import { generateGradient } from "./main";
+import { createStatisticTable, generateGradient } from "./main";
 import coin from "../sounds/sound3.mp3";
 import run from "../sounds/sound1.mp3";
 import change from "../sounds/sound4.mp3";
@@ -25,6 +25,8 @@ const {
     GLOBAL_OFFSET_X,
     GLOBAL_OFFSET_Y,
     MULTI_BALLS,
+    MIN_LINES,
+    MAX_LINES,
 } = CONFIGS;
 
 
@@ -42,7 +44,6 @@ class Sounds {
 
     constructor() {
         this.isMute ? sound.muteAll() : sound.unmuteAll();
-
         this.createSounds();
         this.muteButton();
     }
@@ -50,7 +51,7 @@ class Sounds {
     muteButton() {
         const muteButton = new PIXI.Graphics();
         muteButton.beginFill(BALL_COLOR);
-        muteButton.drawRect(0, 0, 80, 40);
+        muteButton.drawRect(0, 0, 80, 30);
         muteButton.endFill();
         muteButton.x = GLOBAL_OFFSET_X + GAME_BOARD_WIDTH - muteButton.width;
         muteButton.y = 16;
@@ -77,10 +78,10 @@ class Sounds {
 
         const muteText = new PIXI.Text(this.isMute === "true" ? "SOUND OFF" : "SOUND ON", {
             fontSize: 12,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fontWeight: 'bold',
-            fill: '#333',
+            align: "center",
+            fontFamily: "Tektur",
+            fontWeight: "bold",
+            fill: "#333",
         });
         muteText.anchor.set(0.5);
         muteText.x = muteButton.width / 2;
@@ -245,13 +246,14 @@ class BallCollisions {
 
 class Ball extends BallCollisions {
     ball = null;
-    constructor(cells, lines, directions, totalNode, resultNode) {
+    constructor(cells, lines, directions, totalNode, resultNode, linesControlNode) {
         super();
         this.cells = cells;
         this.lines = lines;
         this.directions = directions;
         this.totalNode = totalNode;
         this.resultNode = resultNode;
+        this.linesControlNode = linesControlNode;
 
         this.lifeCycle();
     }
@@ -260,8 +262,19 @@ class Ball extends BallCollisions {
         const death = () => {
             app.ticker.remove(life);
             app.stage.removeChild(this.ball);
-            setTimeout(() => { this.ball = null }, 0);
-            // console.log('Ball died');
+
+            sessionStorage.setItem("balls-counter", +sessionStorage.getItem("balls-counter") - 1); // Decrement balls counter
+            if (+sessionStorage.getItem("balls-counter") === 0) {
+                this.linesControlNode.children.forEach((child) => {
+                    child.eventMode = "dynamic";
+                });
+            }
+
+            setTimeout(() => {
+                this.ball.destroy({ children: true });
+                this.ball = null;
+            }, 200);
+            // console.log("Ball died");
         }
         const  life = () => {
             const curLine = this.lines[this.lineIndex]; // Get nearest line
@@ -295,32 +308,21 @@ class Ball extends BallCollisions {
                             const node = document.getElementById(`cell-${i}`);
                             node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
 
-                            regResult(i);
+                            regResult(i); // Register result
 
                             const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
                             totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
 
                             const resultValueNode = this.resultNode.children[this.resultNode.children.length - 1];
                             resultValueNode.text = RESULTS.getResults().profit; // Increment results table
-                            resultValueNode.x = this.resultNode.children[0].width - resultValueNode.width; // rewrite position
+                            resultValueNode.x = this.resultNode.children[0].width - resultValueNode.width + 20; // rewrite position
 
                             Animations.cellCollision(cell); // Animate cell collision
+
                             death(); // Remove the ball
                             break;
                         }
                     }
-                    // this.cells.forEach((cell, i) => {
-                    //     if (this.isCellCollision(cell)) {
-                    //
-                    //         // this.regResultFunc(RESULTS.getResults());
-                    //
-                    //         const node = document.getElementById(`cell-${i}`);
-                    //         node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
-                    //
-                    //         Animations.cellCollision(cell); // Animate cell collision
-                    //         death(); // Remove the ball
-                    //     }
-                    // });
                 }
 
                 // Increment line collision index because the ball has passed through the line
@@ -332,6 +334,11 @@ class Ball extends BallCollisions {
             Animations.ballMoveBottom(this.ball); // Move the ball down
         }
         const birth = () => {
+            if (RESULTS.getResults().total < RESULTS.getResults().bet) {
+                console.warn("You have no money for this bet!");
+                return;
+            }
+            sessionStorage.setItem("balls-counter", +sessionStorage.getItem("balls-counter") + 1 || 1); // Increment balls counter
             // Create ball
             // TODO make a Creator class 
             this.ball = new PIXI.Graphics();
@@ -341,9 +348,13 @@ class Ball extends BallCollisions {
             this.ball.x = GAME_BOARD_WIDTH / 2 + GLOBAL_OFFSET_X;
             this.ball.y = 0;
 
+            playBet(); // Play bet
+            const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
+            totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
+
             app.stage.addChild(this.ball); // Add ball to the stage
             app.ticker.add(life); // Start the ball life cycle
-            // console.log('Ball born');
+            // console.log("Ball born");
         }
         birth();
     }
@@ -356,7 +367,7 @@ class PegsLines {
     }
     line(x, y) {
         const line = new PIXI.Graphics();
-        // line.beginFill('rgba(0, 0, 0, 0.1)');
+        // line.beginFill("rgba(0, 0, 0, 0.1)");
         line.drawRect(0, 0, GAME_BOARD_WIDTH, PEG_RADIUS * 2);
         line.endFill();
         line.x = x;
@@ -373,7 +384,9 @@ class PegsLines {
         return peg;
     }
     createPegsLines() {
-        for (let row = 0; row < WEIGHTS.length; row++) {
+        const linesAmt = +sessionStorage.getItem("lines") || MAX_LINES;
+
+        for (let row = 0; row < linesAmt; row++) {
             const pegsInThisRow = WEIGHTS[row].length + 1;
             const totalWidth = (pegsInThisRow - 1) * PEG_GAP_X;
             const offsetX = (GAME_BOARD_WIDTH - totalWidth) / 2;
@@ -393,29 +406,41 @@ class PegsLines {
     getLines() {
         return this.lines;
     }
+
+    recreateLines() {
+        this.lines.forEach((line) => {
+            app.stage.removeChild(line);
+            line.destroy({ children: true });
+        });
+        this.lines = [];
+        this.createPegsLines();
+    }
 }
 
 class Cells {
     cells = [];
-    palette = generateGradient(WEIGHTS[WEIGHTS.length - 1].length);
+
     constructor(lines) {
         this.createCells(lines);
     }
 
     cell(x, y, index) {
+        const multipliers = MULTIPLIERS[+sessionStorage.getItem("lines") || MAX_LINES];
+        const palette = generateGradient(multipliers.length);
+
         const cell = new PIXI.Graphics();
-        cell.beginFill(this.palette[index]);
+        cell.beginFill(palette[index]);
         cell.drawRect(0, 0, PEG_GAP_X, CELL_HEIGHT);
         cell.endFill();
         cell.x = x;
         cell.y = y;
 
-        const text = new PIXI.Text(MULTIPLIERS[index], {
+        const text = new PIXI.Text(multipliers[index], {
             fontSize: 17,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fontWeight: 'bold',
-            fill: '#333',
+            align: "center",
+            fontFamily: "Tektur",
+            fontWeight: "bold",
+            fill: "#333",
         });
         text.anchor.set(0.5);
         text.x = PEG_GAP_X / 2;
@@ -442,39 +467,19 @@ class Cells {
     }
 }
 
-class GameBoard {
-    gameBoard;
-
-    constructor(lines, cells) {
-        this.createGameBoard(lines, cells);
-    }
-
-    createGameBoard(lines, cells) {
-        this.gameBoard = new PIXI.Container();
-        this.gameBoard.width = GAME_BOARD_WIDTH;
-        this.gameBoard.height = GAME_BOARD_HEIGHT;
-        this.gameBoard.x = GLOBAL_OFFSET_X;
-        this.gameBoard.y = GLOBAL_OFFSET_Y;
-
-        lines.forEach(line => this.gameBoard.addChild(line));
-        cells.forEach(cell => this.gameBoard.addChild(cell));
-        app.stage.addChild(this.gameBoard);
-    }
-
-    getBoard() {
-        return this.gameBoard;
-    }
-}
-
 class HandlerBar {
+    handlerBar = null;
+
     runButtonNode = null;
     betControlNode = null;
     totalNode = null;
     resultNode = null;
+    linesControlNode = null;
 
-    constructor(lines, cells) {
+    constructor(lines, cells, recreateGameBoard) {
         this.lines = lines;
         this.cells = cells;
+        this.recreateGameBoard = recreateGameBoard;
         this.createHandlerBar();
     }
 
@@ -493,10 +498,10 @@ class HandlerBar {
 
         const buttonText = new PIXI.Text(text, {
             fontSize: 17,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fontWeight: 'bold',
-            fill: '#333',
+            align: "center",
+            fontFamily: "Tektur",
+            fontWeight: "bold",
+            fill: "#333",
         });
         buttonText.anchor.set(0.5);
         buttonText.x = button.width / 2;
@@ -516,18 +521,27 @@ class HandlerBar {
             Animations.buttonClick(runButton);
             Sounds.playSound("run");
 
+            this.linesControlNode.children.forEach((child) => {
+                child.eventMode = "none";
+            });
+
             if (sessionStorage.getItem("multi-ball") === "true") {
                 for (let i = 0; i < MULTI_BALLS; i++) {
                     setTimeout(() => {
                         const directions = binaryPass();
-                        new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode);
+                        new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode);
                     }, 100 * i);
                 }
                 return;
             }
 
+            if (RESULTS.getResults().total < RESULTS.getResults().bet) {
+                alert("You have no money for this bet!");
+                return;
+            }
+
             const directions = binaryPass();
-            new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode)
+            new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode)
         });
 
         this.runButtonNode = runButton;
@@ -554,15 +568,19 @@ class HandlerBar {
             switch (direction) {
                 case "up":
                     betValue.text = +value + 1 + " COIN";
+                    setBet(+value + 1);
                     break;
                 case "down":
                     betValue.text = +value - 1 + " COIN";
+                    setBet(+value - 1);
                     break;
                 case "max":
                     betValue.text = "50 COIN";
+                    setBet(50);
                     break;
                 case "min":
                     betValue.text = "1 COIN";
+                    setBet(1);
                     break;
             }
         }
@@ -610,9 +628,9 @@ class HandlerBar {
         // Create bet control panel text
         const betValue = new PIXI.Text("1 COIN", {
             fontSize: 17,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fill: '#fff',
+            align: "center",
+            fontFamily: "Tektur",
+            fill: "#fff",
         });
         betValue.anchor.set(0.5);
         betValue.x = w / 2;
@@ -632,15 +650,15 @@ class HandlerBar {
 
         const totalBetTitle = new PIXI.Text("TOTAL COINS:", {
             fontSize: 30,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fill: '#fff',
+            align: "center",
+            fontFamily: "Tektur",
+            fill: "#fff",
         });
         const totalBetValue = new PIXI.Text(RESULTS.getResults().total, {
             fontSize: 50,
-            align: 'center',
-            fontFamily: 'Tektur',
-            fill: '#fff',
+            align: "center",
+            fontFamily: "Tektur",
+            fill: "#fff",
         });
         totalBetValue.y = totalBetTitle.height;
 
@@ -661,18 +679,18 @@ class HandlerBar {
 
         const resultsTitle = new PIXI.Text("LAST RESULT:", {
             fontSize: 30,
-            align: 'right',
-            fontFamily: 'Tektur',
-            fill: '#fff',
+            align: "right",
+            fontFamily: "Tektur",
+            fill: "#fff",
         });
         resultsTitle.x = w - resultsTitle.width;
         resultsContainer.addChild(resultsTitle);
 
-        const resultValue = new PIXI.Text("0", {
+        const resultValue = new PIXI.Text(RESULTS.getResults().profit, {
             fontSize: 50,
-            align: 'right',
-            fontFamily: 'Tektur',
-            fill: '#fff',
+            align: "right",
+            fontFamily: "Tektur",
+            fill: "#fff",
         });
         resultValue.y = resultsTitle.height;
         resultValue.x = w - resultValue.width;
@@ -686,6 +704,66 @@ class HandlerBar {
 
         this.resultNode = resultsContainer;
         return resultsContainer;
+    }
+
+    linesControl(w = 50, h = GAME_BOARD_HEIGHT) {
+        const linesControl = new PIXI.Container();
+        linesControl.width = w;
+        linesControl.height = h;
+        linesControl.x = GAME_BOARD_WIDTH - w;
+        linesControl.y = 0 - h - PADDING_TOP;
+
+        linesControl.addChild(this.background(w, h, BACKGROUND_COLOR));
+
+        const linesControlTitle = new PIXI.Text("LINES", {
+            fontSize: 15,
+            align: "center",
+            fontFamily: "Tektur",
+            fill: "#fff",
+        });
+        linesControlTitle.anchor.set(0.5);
+        linesControlTitle.x = linesControl.width / 2;
+        linesControlTitle.y = PEG_GAP_Y;
+        linesControl.addChild(linesControlTitle);
+
+        const curLine = sessionStorage.getItem("lines") || MAX_LINES;
+
+        for (let i = MIN_LINES; i <= MAX_LINES; i++) {
+            const linesControlValue = new PIXI.Text(i, {
+                fontSize: 17,
+                align: "center",
+                fontFamily: "Tektur",
+                fill: +curLine === i ? BALL_COLOR : "#fff",
+            });
+            linesControlValue.anchor.set(0.5);
+            linesControlValue.x = linesControl.width / 2;
+            linesControlValue.y = linesControlValue.height * 2 * (i - MIN_LINES) + linesControlValue.height + 70;
+
+            linesControlValue.eventMode = "dynamic";
+            linesControlValue.on("pointerdown", () => {
+                if (+sessionStorage.getItem("lines") === i) return;
+
+                sessionStorage.setItem("lines", i);
+                this.recreateGameBoard();
+
+                app.stage.removeChild(this.handlerBar);
+                this.handlerBar.destroy({ children: true });
+                this.handlerBar = null;
+
+                createStatisticTable();
+            });
+            linesControlValue.on("pointerover", () => {
+                linesControlValue.style.fill = BALL_COLOR;
+            });
+            linesControlValue.on("pointerout", () => {
+                if (+sessionStorage.getItem("lines") === i) return;
+                linesControlValue.style.fill = "#fff";
+            });
+            linesControl.addChild(linesControlValue);
+        }
+
+        this.linesControlNode = linesControl;
+        return linesControl;
     }
 
     createHandlerBar() {
@@ -702,18 +780,61 @@ class HandlerBar {
         handlerBar.addChild(this.betControl());
         handlerBar.addChild(this.total());
         handlerBar.addChild(this.results());
+        handlerBar.addChild(this.linesControl());
+
+        this.handlerBar = handlerBar;
+    }
+
+    getHandlerBar() {
+        return this.handlerBar;
+    }
+}
+
+class GameBoard {
+    gameBoard = null;
+    handlerBar = null;
+
+    constructor() {
+        this.createGameBoard();
+    }
+
+    createGameBoard() {
+        this.gameBoard = new PIXI.Container();
+        this.gameBoard.width = GAME_BOARD_WIDTH;
+        this.gameBoard.height = GAME_BOARD_HEIGHT;
+        this.gameBoard.x = GLOBAL_OFFSET_X;
+        this.gameBoard.y = GLOBAL_OFFSET_Y;
+        app.stage.addChild(this.gameBoard);
+
+        const linesInstance = new PegsLines();
+        const lines = linesInstance.getLines();
+
+        const cellsInstance = new Cells(lines);
+        const cells = cellsInstance.getCells();
+
+        lines.forEach(line => this.gameBoard.addChild(line));
+        cells.forEach(cell => this.gameBoard.addChild(cell));
+
+        new HandlerBar(lines, cells, this.recreateGameBoard.bind(this))
+    }
+
+    recreateGameBoard() {
+        this.gameBoard.children.forEach((child) => {
+            app.stage.removeChild(child);
+            child.destroy({ children: true });
+        });
+        this.gameBoard.destroy({ children: true });
+        this.gameBoard = null;
+        this.createGameBoard();
+    }
+
+    getBoard() {
+        return this.gameBoard;
     }
 }
 
 export function plinkoInit() {
     new Sounds();
-
-    const linesInstance = new PegsLines();
-    const lines = linesInstance.getLines();
-
-    const cellsInstance = new Cells(lines);
-    const cells = cellsInstance.getCells();
-
-    new GameBoard(lines, cells);
-    new HandlerBar(lines, cells);
+    new GameBoard();
+    sessionStorage.setItem("balls-counter", 0);
 }

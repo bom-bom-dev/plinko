@@ -4,29 +4,36 @@ import { plinkoInit } from "./app";
 import chroma from "chroma-js";
 
 // MULTI BALLS HANDLER
-const checkboxNode = document.createElement("label");
-const checkbox = document.createElement("input");
-checkbox.type = "checkbox";
-checkbox.addEventListener("change", () => {
-    sessionStorage.setItem("multi-ball", `${checkbox.checked}`);
-});
-checkboxNode.appendChild(document.createTextNode("Multi Balls"));
-checkboxNode.appendChild(checkbox);
-document.body.appendChild(checkboxNode);
+export function createMultiBallsHandler() {
+    const checkboxNode = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = sessionStorage.getItem("multi-ball") === "true";
+    checkbox.addEventListener("change", () => {
+        sessionStorage.setItem("multi-ball", `${checkbox.checked}`);
+    });
+    checkboxNode.appendChild(document.createTextNode("Multi Balls"));
+    checkboxNode.appendChild(checkbox);
+    document.body.appendChild(checkboxNode);
+}
 
 
 // STATISTICS TABLE
-const statisticNode = document.createElement("div");
-statisticNode.id = "statistic";
-document.body.appendChild(statisticNode);
+export function createStatisticTable() {
+    if (document.getElementById("statistic")) {
+        document.getElementById("statistic").remove();
+    }
 
-WEIGHTS[WEIGHTS.length - 1].forEach((weight, index) => {
-    const cell = document.createElement("p");
-    cell.innerHTML = `<b>${index}</b>: <span id="cell-${index}">0</span>`;
+    const statisticNode = document.createElement("div");
+    statisticNode.id = "statistic";
+    document.body.appendChild(statisticNode);
 
-    statisticNode.appendChild(cell);
-});
-
+    [...Array(+sessionStorage.getItem("lines"))].forEach((n, index) => {
+        const cell = document.createElement("p");
+        cell.innerHTML = `<b>${index}</b>: <span id="cell-${index}">0</span>`;
+        statisticNode.appendChild(cell);
+    });
+}
 
 // PALETTE FOR CELLS
 export function generateGradient(length) {
@@ -43,8 +50,9 @@ export function generateGradient(length) {
 
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
-    checkbox.checked = sessionStorage.getItem("multi-ball") === "true";
     setTimeout(() => {
         plinkoInit();
+        createMultiBallsHandler();
+        createStatisticTable();
     }, 100);
 });
