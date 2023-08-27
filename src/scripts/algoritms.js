@@ -107,12 +107,13 @@ export function setBet (bet) {
 }
 
 export function playBet() {
-    const curBet = RESULTS.getResults().bet;
-    const curTotal = RESULTS.getResults().total;
+    const curResult = RESULTS.getResults();
+    const curBet = curResult.bet;
+    const curTotal = curResult.total;
 
     RESULTS.setResults({
-        ...RESULTS.getResults(),
-        total: curTotal - curBet
+        ...curResult,
+        total: round(curTotal - curBet, 2)
     });
 }
 
@@ -124,10 +125,10 @@ export function regResult (index) {
 
     const multipliers = MULTIPLIERS[+sessionStorage.getItem("lines") || CONFIGS.MAX_LINES];
     const multiplier = multipliers[index];
-    const profit = round((multiplier * curResult.bet), 2);
+    const bet = curResult.bet;
+    const profit = round((multiplier * bet), 2);
     const total = round((curResult.total + profit), 2);
     const last5 = curResult.last5;
-    const bet = curResult.bet;
 
     last5.length === 5 && last5.shift();
     last5.push(profit);
