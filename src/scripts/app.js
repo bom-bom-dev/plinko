@@ -262,6 +262,7 @@ class Ball extends BallCollisions {
         const death = () => {
             app.ticker.remove(life);
             app.stage.removeChild(this.ball);
+            gsap.killTweensOf(this.ball);
 
             sessionStorage.setItem("balls-counter", +sessionStorage.getItem("balls-counter") - 1); // Decrement balls counter
             if (+sessionStorage.getItem("balls-counter") === 0) {
@@ -270,11 +271,8 @@ class Ball extends BallCollisions {
                 });
             }
 
-            setTimeout(() => {
-                this.ball.destroy({ children: true });
-                this.ball = null;
-            }, 200);
-            // console.log("Ball died");
+            this.ball.destroy({ children: true });
+            this.ball = null;
         }
         const  life = () => {
             const curLine = this.lines[this.lineIndex]; // Get nearest line
@@ -320,7 +318,7 @@ class Ball extends BallCollisions {
                             Animations.cellCollision(cell); // Animate cell collision
 
                             death(); // Remove the ball
-                            break;
+                            return;
                         }
                     }
                 }
