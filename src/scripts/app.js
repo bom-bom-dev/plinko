@@ -519,7 +519,7 @@ class HandlerBar {
             if (sessionStorage.getItem("multi-ball") === "true") {
                 for (let i = 0; i < MULTI_BALLS; i++) {
                     setTimeout(() => {
-                        const directions = binaryPass();
+                        const { directions } = binaryPass();
                         new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode);
                     }, 100 * i);
                 }
@@ -531,7 +531,7 @@ class HandlerBar {
                 return;
             }
 
-            const directions = binaryPass();
+            const { directions } = binaryPass();
             new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode)
         });
 

@@ -17,32 +17,23 @@ import { MULTIPLIERS, WEIGHTS, CONFIGS } from "./configs";
 
 const generator = new MersenneTwister();
 
-function weightedRandom(a, b) {
-    const sum = a + b ;
-    const def = Math.abs(a - b);
-    const rand = (generator.random() * sum);
-    return rand < sum / 2;
+// function weightedRandom(a, b) {
+//     const sum = a + b ;
+//     const rand = (generator.random() * sum);
+//     return rand < sum / 2;
+// }
 
+function weightedRandom(a, b) {
+    const sum = a + b;
+    const rand = generator.random() * sum;
+    return rand < a;
 }
 
-// function getBias(index, length, concentrationControl = 0) {
-//     const center = length / 2;
-//     const distanceToCenter = Math.abs(center - index);
-//     return (distanceToCenter) * concentrationControl;
-// }
-
-// function getBias(cur, length, concentration) {
-//     const middle = (length - 1) / 2;
-//     let bias = Math.abs(cur - middle) / middle;
-//     bias *= concentration;
-//     return bias;
-// }
-
-
-export function binaryPass() {
-    const result = [];
+export function binaryPass(logs = true) {
+    const directions = [];
+    const targetWeights = [];
+    let collisionIndex = 0;
     let cur = Number(weightedRandom(0, 1));
-    // let cur = 0;
 
     const weights = [...WEIGHTS].slice(0, +sessionStorage.getItem("lines") || CONFIGS.MAX_LINES);
 
@@ -50,45 +41,51 @@ export function binaryPass() {
         const leftIndex = cur;
         const rightIndex = cur === row.length - 1 ? cur : cur + 1;
 
-        // const leftWeight = leftIndex !== cur ? row[leftIndex] : 0;
-        // const rightWeight = rightIndex !== cur ? row[rightIndex] : 0;
-
         const leftWeight = row[leftIndex];
         const rightWeight = row[rightIndex];
 
-        // const bias = getBias(cur, row.length, -0.05);
-        // const leftWeight = cur <= row.length / 2 ? row[leftIndex] - bias : row[leftIndex] + bias;
-        // const rightWeight = cur <= row.length / 2 ? row[rightIndex] + bias : row[rightIndex] - bias;
-
         // return true or false, which is left or right
         const randomValue = weightedRandom(leftWeight, rightWeight);
-        result.push(randomValue ? "left" : "right");
+
+        directions.push(randomValue ? "left" : "right");
+        targetWeights.push(randomValue ? leftWeight : rightWeight);
 
         cur = randomValue ? leftIndex : rightIndex;
 
         if (i === weights.length - 1) {
-            console.log("Generated index: ", cur);
+            logs && console.log("Generated index: ", cur);
+            collisionIndex = cur;
         }
     });
 
-    return result;
+    return {
+        directions: directions,
+        targetWeights: targetWeights,
+        collisionIndex: collisionIndex,
+    }
 }
 
 
 class RESULTS_CLASS {
-    results = {
-        total: 1000,
-        bet: 1,
-        index: 0,
-        multiplier: 0,
-        profit: 0,
-        last5: [],
+    results = null;
+    constructor() {
+        this.refreshResults();
     }
     getResults() {
         return this.results;
     }
     setResults(results) {
         this.results = results;
+    }
+    refreshResults() {
+        this.results = {
+            total: 1000,
+            bet: 1,
+            index: 0,
+            multiplier: 0,
+            profit: 0,
+            last5: [],
+        }
     }
 }
 
@@ -117,11 +114,11 @@ export function playBet() {
     });
 }
 
-export function regResult (index) {
-    console.log("Collision index:", index);
-    console.log("-----------------------");
+export function regResult (index, logs = true) {
+    logs && console.log("Collision index:", index);
+    logs && console.log("-----------------------");
     const curResult = RESULTS.getResults();
-    console.log("Pre result: ", curResult);
+    logs && console.log("Pre result: ", curResult);
 
     const multipliers = MULTIPLIERS[+sessionStorage.getItem("lines") || CONFIGS.MAX_LINES];
     const multiplier = multipliers[index];
@@ -142,6 +139,57 @@ export function regResult (index) {
         last5: last5
     });
 
-    console.log("Updated result: ", RESULTS.getResults());
-    console.log("");
+    logs && console.log("Updated result: ", RESULTS.getResults());
+    logs && console.log("");
 }
+
+// TEST
+async function test() {
+    console.info("");
+    console.info("---- Tes run ----");
+    console.log("START RESULTS", RESULTS.getResults());
+    console.log("MULTIPLIERS", MULTIPLIERS[+sessionStorage.getItem("lines") || CONFIGS.MAX_LINES]);
+    const rtp = [];
+
+    const bet = async () => {
+        const { collisionIndex } = binaryPass(false);
+        playBet();
+        regResult(collisionIndex, false);
+
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve();
+                console.info('bet resolved')
+            }, 10);
+        });
+    }
+
+    const bet100 = async () => {
+        for (let i = 0; i < 100; i++) {
+            await bet();
+        }
+
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve();
+                console.info('100 bets resolved')
+            }, 10);
+        });
+    }
+
+    for (let i = 0; i < 10; i++) {
+        await bet100();
+        const { total} = RESULTS.getResults();
+        rtp.push(total);
+        RESULTS.refreshResults();
+    }
+    console.info("")
+    console.info("[RTP] 10 loops x 100 bets: ", rtp);
+    console.info("[RTP] totals average: ", round((rtp.reduce((a, b) => a + b, 0) / rtp.length), 2));
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "T" || event.keyCode === 84) {
+        test();
+    }
+});
