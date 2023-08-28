@@ -17,16 +17,10 @@ import { MULTIPLIERS, WEIGHTS, CONFIGS } from "./configs";
 
 const generator = new MersenneTwister();
 
-// function weightedRandom(a, b) {
-//     const sum = a + b ;
-//     const rand = (generator.random() * sum);
-//     return rand < sum / 2;
-// }
-
 function weightedRandom(a, b) {
     const sum = a + b;
     const rand = generator.random() * sum;
-    return rand < a;
+    return rand < sum / 2;
 }
 
 export function binaryPass(logs = true) {
@@ -143,53 +137,22 @@ export function regResult (index, logs = true) {
     logs && console.log("");
 }
 
-// TEST
-async function test() {
-    console.info("");
-    console.info("---- Tes run ----");
-    console.log("START RESULTS", RESULTS.getResults());
-    console.log("MULTIPLIERS", MULTIPLIERS[+sessionStorage.getItem("lines") || CONFIGS.MAX_LINES]);
-    const rtp = [];
-
-    const bet = async () => {
-        const { collisionIndex } = binaryPass(false);
-        playBet();
-        regResult(collisionIndex, false);
-
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve();
-                console.info('bet resolved')
-            }, 10);
-        });
-    }
-
-    const bet100 = async () => {
-        for (let i = 0; i < 100; i++) {
-            await bet();
-        }
-
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve();
-                console.info('100 bets resolved')
-            }, 10);
-        });
-    }
-
-    for (let i = 0; i < 10; i++) {
-        await bet100();
-        const { total} = RESULTS.getResults();
-        rtp.push(total);
-        RESULTS.refreshResults();
-    }
-    console.info("")
-    console.info("[RTP] 10 loops x 100 bets: ", rtp);
-    console.info("[RTP] totals average: ", round((rtp.reduce((a, b) => a + b, 0) / rtp.length), 2));
-}
+// 11 lines - 0.9599609375
+// 10 lines - 0.9900390625
+// 9 lines - 0.98984375
+// 8 lines - 0.98984375
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "T" || event.keyCode === 84) {
-        test();
+        let sum = 0;
+        for (let i = 0; i < 100000; i++) {
+            const { collisionIndex } = binaryPass(false);
+            const m = MULTIPLIERS[+sessionStorage.getItem("lines") || CONFIGS.MAX_LINES];
+            const multiplier = m[collisionIndex];
+            const profit = round((multiplier * 1), 2);
+            sum += profit;
+        }
+
+        console.log("Average profit: ", sum / 100000);
     }
 });
