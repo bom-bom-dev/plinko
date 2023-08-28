@@ -52,7 +52,7 @@ export function generateGradient(length) {
 
 
 // INIT
-document.addEventListener("DOMContentLoaded", () => {
+document.fonts.load('13pt "Tektur"').then(() => {
     plinkoInit();
     createMultiBallsHandler();
     createStatisticTable();

@@ -79,7 +79,7 @@ class Sounds {
         const muteText = new PIXI.Text(this.isMute === "true" ? "SOUND OFF" : "SOUND ON", {
             fontSize: 12,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fontWeight: "bold",
             fill: "#333",
         });
@@ -427,7 +427,7 @@ class Cells {
         const text = new PIXI.Text(multipliers[index], {
             fontSize: 17,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fontWeight: "bold",
             fill: "#333",
         });
@@ -488,7 +488,7 @@ class HandlerBar {
         const buttonText = new PIXI.Text(text, {
             fontSize: 17,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fontWeight: "bold",
             fill: "#333",
         });
@@ -618,7 +618,7 @@ class HandlerBar {
         const betValue = new PIXI.Text("1 COIN", {
             fontSize: 17,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         betValue.anchor.set(0.5);
@@ -640,13 +640,13 @@ class HandlerBar {
         const totalBetTitle = new PIXI.Text("TOTAL COINS:", {
             fontSize: 30,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         const totalBetValue = new PIXI.Text(RESULTS.getResults().total, {
             fontSize: 50,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         totalBetValue.y = totalBetTitle.height;
@@ -669,7 +669,7 @@ class HandlerBar {
         const resultsTitle = new PIXI.Text("LAST RESULT:", {
             fontSize: 30,
             align: "right",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         resultsTitle.x = w - resultsTitle.width;
@@ -678,7 +678,7 @@ class HandlerBar {
         const resultValue = new PIXI.Text(RESULTS.getResults().profit, {
             fontSize: 50,
             align: "right",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         resultValue.y = resultsTitle.height;
@@ -707,7 +707,7 @@ class HandlerBar {
         const linesControlTitle = new PIXI.Text("LINES", {
             fontSize: 15,
             align: "center",
-            fontFamily: "Tektur",
+            fontFamily: ["Tektur", "Arial"],
             fill: "#fff",
         });
         linesControlTitle.anchor.set(0.5);
@@ -721,7 +721,7 @@ class HandlerBar {
             const linesControlValue = new PIXI.Text(i, {
                 fontSize: 17,
                 align: "center",
-                fontFamily: "Tektur",
+                fontFamily: ["Tektur", "Arial"],
                 fill: +curLine === i ? BALL_COLOR : "#fff",
             });
             linesControlValue.anchor.set(0.5);
