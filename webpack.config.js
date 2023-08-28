@@ -4,6 +4,7 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
+    devtool: 'eval-cheap-source-map',
     entry: './src/scripts/main.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -41,6 +42,10 @@ module.exports = {
                 {
                     from: path.resolve(__dirname, 'src/index.html'),
                     to: path.resolve(__dirname, 'dist')
+                },
+                {
+                    from: path.resolve(__dirname, 'src/favicon.ico'),
+                    to: path.resolve(__dirname, 'dist')
                 }
             ]
         })
@@ -51,6 +56,5 @@ module.exports = {
             new CssMinimizerPlugin(),
             new TerserPlugin()
         ]
-    },
-    mode: 'development', // switch to production for minimize code
+    }
 }
