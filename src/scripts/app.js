@@ -39,16 +39,25 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 
 
+/**
+ * @class Sounds
+ * @description Class for creating and managing sounds
+ * @property isMute - mute state
+ * @method s - generic method for creating sound
+ * @method createSounds - creates all sounds
+ * @method createMuteButton - creates mute button
+ * @method playSound - static method for play sound by name
+ */
 class Sounds {
-    isMute = sessionStorage.getItem("mute");
+    isMute = sessionStorage.getItem("mute"); // Get mute state from session storage
 
     constructor() {
-        this.isMute ? sound.muteAll() : sound.unmuteAll();
-        this.createSounds();
-        this.muteButton();
+        this.isMute ? sound.muteAll() : sound.unmuteAll(); // Mute or unmute all sounds
+        this.createSounds(); // Create all sounds
+        this.createMuteButton(); // Create mute button
     }
 
-    muteButton() {
+    createMuteButton() {
         const muteButton = new PIXI.Graphics();
         muteButton.beginFill(BALL_COLOR);
         muteButton.drawRect(0, 0, 80, 30);
@@ -109,6 +118,19 @@ class Sounds {
     }
 }
 
+
+/**
+ * @class Animations
+ * @description Class for creating and managing animations, use GSAP, static methods uses in lifeCycle method of Ball class
+ * @property ease - ease type
+ * @property duration - duration of animation
+ * @property dy - delta y for ball move
+ * @property dx - delta x for ball move
+ * @method ballMoveRight - animation for ball move right
+ * @method ballMoveLeft - animation for ball move left
+ * @method ballMoveBottom - animation for ball move bottom
+ * @method pegScale - animation for peg scale
+ */
 class Animations {
     // type EaseString = "none"
     //     | "power1" | "power1.in" | "power1.out" | "power1.inOut"
@@ -122,6 +144,7 @@ class Animations {
     //     | "expo" | "expo.in" | "expo.out" | "expo.inOut"
     //     | "sine" | "sine.in" | "sine.out" | "sine.inOut" | string;
 
+    // Params for animations
     static ease = "back.out";
     static duration = 0.3;
     static dy = PEG_GAP_Y / 10;
@@ -217,8 +240,17 @@ class Animations {
     }
 }
 
+
+/**
+ * @class BallCollisions
+ * @description Class for checking collisions, use PIXI.Point for getting global position of objects, extends in Ball class
+ * @property lineIndex - index of line, which ball has passed through
+ * @method isPegCollision - check collision with peg
+ * @method isCellCollision - check collision with cell
+ * @method isLineCollision - check collision with line
+ */
 class BallCollisions {
-    lineIndex = 0;
+    lineIndex = 0; // Index of line, which ball has passed through
     constructor(ball) {
         this.ball = ball;
     }
@@ -244,6 +276,21 @@ class BallCollisions {
     }
 }
 
+
+/**
+ * @class Ball
+ * @description Class for creating and managing ball, extends in BallCollisions class, use app.ticker for life cycle
+ * @property cells - cells array, cells - is parts of basket
+ * @property lines - lines array, lines - wrapper which contains pegs
+ * @property directions - directions array, directions - result of binaryPass() function
+ * @property totalNode - total node, node which contains total bet value
+ * @property resultNode - result node, node which contains result value
+ * @property linesControlNode - lines control node, node which contains lines control panel
+ * @method lifeCycle - life cycle of ball, include birth(), life() and death() functions
+ * @function birth - create ball, increment balls counter, play bet, add ball to the stage, start life cycle
+ * @function life - check for collisions with pegs, cells and lines, run collision animations
+ * @function death - remove ball, decrement balls counter, remove event listeners from lines control panel, destroy ball and related animations
+ */
 class Ball extends BallCollisions {
     ball = null;
     constructor(cells, lines, directions, totalNode, resultNode, linesControlNode) {
@@ -255,24 +302,24 @@ class Ball extends BallCollisions {
         this.resultNode = resultNode;
         this.linesControlNode = linesControlNode;
 
-        this.lifeCycle();
+        this.lifeCycle(); // Start life cycle for initializing ball
     }
 
     lifeCycle() {
         const death = () => {
-            app.ticker.remove(life);
-            app.stage.removeChild(this.ball);
-            gsap.killTweensOf(this.ball);
-
+            app.ticker.remove(life); // Stop the ball life cycle
+            app.stage.removeChild(this.ball); // Remove the ball from the stage
+            gsap.killTweensOf(this.ball); // Kill all animations of the ball
             sessionStorage.setItem("balls-counter", +sessionStorage.getItem("balls-counter") - 1); // Decrement balls counter
+            
+            // Add event listeners to lines control panel if balls counter is 0, look at birth()
             if (+sessionStorage.getItem("balls-counter") === 0) {
                 this.linesControlNode.children.forEach((child) => {
                     child.eventMode = "dynamic";
                 });
             }
-
-            this.ball.destroy({ children: true });
-            this.ball = null;
+            this.ball.destroy({ children: true }); // Destroy the ball and children nodes
+            this.ball = null; // Remove the ball from the memory
         }
         const  life = () => {
             const curLine = this.lines[this.lineIndex]; // Get nearest line
@@ -302,23 +349,25 @@ class Ball extends BallCollisions {
                 if (this.lineIndex === this.lines.length - 1) {
                     for (let i = 0; i < this.cells.length; i++) {
                         const cell = this.cells[i];
+                        
+                        // Check for cell collision
                         if (this.isCellCollision(cell)) {
-                            const node = document.getElementById(`cell-${i}`);
+                            const node = document.getElementById(`cell-${i}`); // Get cell node from statistics table
                             node.innerHTML = parseInt(node.innerHTML) + 1; // Increment cell value to statistics table
 
                             regResult(i); // Register result
 
                             const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
-                            totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
+                            totalValueNode.text = RESULTS.getResults().total; // Set total value to node
 
                             const resultValueNode = this.resultNode.children[this.resultNode.children.length - 1];
-                            resultValueNode.text = RESULTS.getResults().profit; // Increment results table
-                            resultValueNode.x = this.resultNode.children[0].width - resultValueNode.width + 20; // rewrite position
+                            resultValueNode.text = RESULTS.getResults().profit; // Set profit value to node
+                            resultValueNode.x = this.resultNode.children[0].width - resultValueNode.width + 20; // rewrite position after changing value
 
-                            Animations.cellCollision(cell); // Animate cell collision
+                            Animations.cellCollision(cell);
 
                             death(); // Remove the ball
-                            return;
+                            return; // Stop the ball life cycle
                         }
                     }
                 }
@@ -328,17 +377,17 @@ class Ball extends BallCollisions {
                     this.lineIndex++;
                 }
             }
-
             Animations.ballMoveBottom(this.ball); // Move the ball down
         }
         const birth = () => {
+            // Check if total value less than bet value, make warning and stop the ball life cycle
             if (RESULTS.getResults().total < RESULTS.getResults().bet) {
                 console.warn("You have no money for this bet!");
                 return;
             }
             sessionStorage.setItem("balls-counter", +sessionStorage.getItem("balls-counter") + 1 || 1); // Increment balls counter
+            
             // Create ball
-            // TODO make a Creator class 
             this.ball = new PIXI.Graphics();
             this.ball.beginFill(BALL_COLOR);
             this.ball.drawCircle(0, 0, BALL_RADIUS);
@@ -347,21 +396,32 @@ class Ball extends BallCollisions {
             this.ball.y = 0;
 
             playBet(); // Play bet
+            
             const totalValueNode = this.totalNode.children[this.totalNode.children.length - 1];
-            totalValueNode.text = RESULTS.getResults().total; // Increment total bet value
+            totalValueNode.text = RESULTS.getResults().total; // set total value to node
 
             app.stage.addChild(this.ball); // Add ball to the stage
             app.ticker.add(life); // Start the ball life cycle
             // console.log("Ball born");
         }
-        birth();
+        
+        birth(); // Initialize ball
     }
 }
 
+
+/**
+ * @class PegsLines
+ * @description Class for creating and managing pegs and lines
+ * @method line - generic for line, line - wrapper which contains pegs
+ * @method peg - generic for peg
+ * @method createPegsLines - create pegs and lines, based on WEIGHTS array
+ * @method getLines - return lines array
+ */
 class PegsLines {
     lines = [];
     constructor() {
-        this.createPegsLines();
+        this.createPegsLines(); // Create pegs and lines
     }
     line(x, y) {
         const line = new PIXI.Graphics();
@@ -382,7 +442,7 @@ class PegsLines {
         return peg;
     }
     createPegsLines() {
-        const linesAmt = +sessionStorage.getItem("lines") || MAX_LINES;
+        const linesAmt = +sessionStorage.getItem("lines") || MAX_LINES; // Get lines amount from session storage
 
         for (let row = 0; row < linesAmt; row++) {
             const pegsInThisRow = WEIGHTS[row].length + 1;
@@ -406,6 +466,14 @@ class PegsLines {
     }
 }
 
+
+/**
+ * @class Cells
+ * @description Class for creating and managing cells
+ * @method cell - generic for cell, cell - is part of basket
+ * @method createCells - create cells, based on MULTIPLIERS array and last line
+ * @method getCells - return cells array
+ */
 class Cells {
     cells = [];
 
@@ -414,8 +482,8 @@ class Cells {
     }
 
     cell(x, y, index) {
-        const multipliers = MULTIPLIERS[+sessionStorage.getItem("lines") || MAX_LINES];
-        const palette = generateGradient(multipliers.length);
+        const multipliers = MULTIPLIERS[+sessionStorage.getItem("lines") || MAX_LINES]; // Get multipliers array based on lines amount from session storage
+        const palette = generateGradient(multipliers.length); // Generate gradient for cells, look at main.js
 
         const cell = new PIXI.Graphics();
         cell.beginFill(palette[index]);
@@ -456,7 +524,24 @@ class Cells {
     }
 }
 
-class HandlerBar {
+
+/**
+ * @class HandlersBar
+ * @description Class for creating and managing handlers bar
+ * @property lines - lines array
+ * @property cells - cells array
+ * @property recreateGameBoard - function for recreating game board, get from GameBoard class
+ * @method background - generic for background
+ * @method button - generic for button
+ * @method runButton - create run button
+ * @method betControl - create bet control panel
+ * @method total - create total node
+ * @method results - create result node
+ * @method linesControl - create lines control panel
+ * @method createHandlersBar - create handlers bar, include all handlers nodes
+ * @method getHandlersBar - return handlers bar
+ */
+class HandlersBar {
     handlerBar = null;
 
     runButtonNode = null;
@@ -469,7 +554,7 @@ class HandlerBar {
         this.lines = lines;
         this.cells = cells;
         this.recreateGameBoard = recreateGameBoard;
-        this.createHandlerBar();
+        this.createHandlersBar();
     }
 
     background(w, h, color = "rgba(0, 0, 0, 0.1)") {
@@ -510,10 +595,12 @@ class HandlerBar {
             Animations.buttonClick(runButton);
             Sounds.playSound("run");
 
+            // Remove event listeners from lines control panel, when balls is running
             this.linesControlNode.children.forEach((child) => {
                 child.eventMode = "none";
             });
 
+            // Multi balls mode, run 100 balls for each click
             if (sessionStorage.getItem("multi-ball") === "true") {
                 for (let i = 0; i < MULTI_BALLS; i++) {
                     setTimeout(() => {
@@ -524,17 +611,18 @@ class HandlerBar {
                 return;
             }
 
+            // Check if total value less than bet value, make warning and stop the ball life cycle
             if (RESULTS.getResults().total < RESULTS.getResults().bet) {
                 alert("You have no money for this bet!");
                 return;
             }
 
-            const { directions } = binaryPass();
-            new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode)
+            const { directions } = binaryPass(); // Get directions array, look at algoritms.js
+            new Ball(this.cells, this.lines, directions, this.totalNode, this.resultNode, this.linesControlNode); // Single ball mode, run 1 ball for each click
         });
 
-        this.runButtonNode = runButton;
-        return runButton;
+        this.runButtonNode = runButton; // Save run button node to class property
+        return runButton; // Return run button node
     }
 
     betControl(w = 200, h = 50) {
@@ -548,6 +636,7 @@ class HandlerBar {
         // Create bet control panel background
         betContainer.addChild(this.background(w, h));
 
+        // Function for changing bet value
         const betChange = (direction) => {
             const value = betValue.text.split(" ")[0];
 
@@ -717,6 +806,7 @@ class HandlerBar {
 
         const curLine = sessionStorage.getItem("lines") || MAX_LINES;
 
+        // Create lines control panel, based on MIN_LINES and MAX_LINES constants
         for (let i = MIN_LINES; i <= MAX_LINES; i++) {
             const linesControlValue = new PIXI.Text(i, {
                 fontSize: 17,
@@ -755,7 +845,7 @@ class HandlerBar {
         return linesControl;
     }
 
-    createHandlerBar() {
+    createHandlersBar() {
         const handlerBar = new PIXI.Container();
         handlerBar.width = GAME_BOARD_WIDTH;
         handlerBar.height = GAME_BOARD_HEIGHT / 4;
@@ -774,11 +864,18 @@ class HandlerBar {
         this.handlerBar = handlerBar;
     }
 
-    getHandlerBar() {
+    getHandlersBar() {
         return this.handlerBar;
     }
 }
 
+
+/**
+ * @class GameBoard
+ * @description Class for creating wrapper of all game elements and control position
+ * @method createGameBoard - create game board
+ * @method recreateGameBoard - recreate game board, used in handlers bar
+ */
 class GameBoard {
     gameBoard = null;
 
@@ -803,7 +900,7 @@ class GameBoard {
         lines.forEach(line => this.gameBoard.addChild(line));
         cells.forEach(cell => this.gameBoard.addChild(cell));
 
-        new HandlerBar(lines, cells, this.recreateGameBoard.bind(this))
+        new HandlersBar(lines, cells, this.recreateGameBoard.bind(this))
     }
 
     recreateGameBoard() {
@@ -817,7 +914,12 @@ class GameBoard {
     }
 }
 
+
+/**
+ * @function plinkoInit
+ * @description Function for initializing game
+ */
 export function plinkoInit() {
-    new Sounds();
-    new GameBoard();
+    new Sounds(); // Initialize sounds
+    new GameBoard(); // Initialize game board
 }
