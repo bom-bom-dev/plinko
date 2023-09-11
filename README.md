@@ -16,10 +16,6 @@
  Go to: http://localhost:3300/
 
 
-### Demo
-https://ivan-kitsa-dev.github.io/Plinko
-
-
 ### Test math
 Open console and press `t` key on keyboard
 
